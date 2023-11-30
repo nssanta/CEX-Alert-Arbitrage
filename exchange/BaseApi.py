@@ -2,9 +2,9 @@ import logging
 from abc import ABC, abstractmethod
 
 class BaseApi(ABC):
-    def __init__(self):
-        self.log_file = 'base_api.log'
-        self.logger = logging.getLogger('BaseApi')
+    def __init__(self, log_file = 'base_api.log', logger = "BaseApi"):
+        self.log_file = log_file
+        self.logger = logging.getLogger(logger)
         self.logger.setLevel(logging.ERROR)
 
         # Создаем файл, если он не существует
@@ -24,10 +24,13 @@ class BaseApi(ABC):
             stream_handler.setFormatter(formatter)
             self.logger.addHandler(stream_handler)
 
-        def disable_stream_handler(self):
-            for handler in self.logger.handlers:
-                if isinstance(handler, logging.StreamHandler):
-                    self.logger.removeHandler(handler)
+    def disable_stream_handler(self):
+        '''
+            Метод выключает логинг в консоль
+        '''
+        for handler in self.logger.handlers:
+            if isinstance(handler, logging.StreamHandler):
+                self.logger.removeHandler(handler)
     @abstractmethod
     def get_full_info(self):
         '''

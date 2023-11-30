@@ -5,9 +5,9 @@ import okx.MarketData as MarketData
 
 class OkxApi(BaseApi):
     def __init__(self):
-        super().__init__()
-        self.log_file = 'okx_api.log'
-        self.logger = logging.getLogger('OkxApi')
+        # Создаем логгер, используя суперкласс
+        super().__init__(log_file='okx_api.log',logger='OkxApi')
+
 
 
     def get_full_info(self):
