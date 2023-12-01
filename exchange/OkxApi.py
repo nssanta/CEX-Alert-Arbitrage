@@ -69,14 +69,46 @@ class OkxApi(BaseApi):
                     break
         # Возвращаем список тикеров
         return tickers
+    async def get_coins_price_vol(self):
+        """
+            Асинхронная функция для обработки данных, полученных от API.
+            А именно приводит монетную пару к единому виду и делает словарь, где
+            ключ- монетная пара, и значения котировок и объемы в двух валютах.
+            :return: Словарь с информацией или None в случае ошибки.
+        """
+        # Получаем информацию с API
+        info = await self.get_full_info()
+        # Создаем новый словарь для хранения обработанной информации
+        processed_info = {}
+        # Обрабатываем каждый элемент в полученной информации
+        for item in info:
+            try:
+                # Получаем монетную пару, преобразуем ее в нижний регистр и удаляем знак "-"
+                pair = item["instId"].lower().replace("-", "")
+                # Создаем новый словарь для этой пары
+                processed_info[pair] = {
+                    # Поле котировки
+                    "price": item["last"],
+                    # Поле объем в монетном эквиваленте (первая часть монетной пары)
+                    "volone24": item["vol24h"],
+                    # Поле объем в стандартной валюте (вторая часть монетной пары)
+                    "voltwo24": item["volCcy24h"]
+                }
+            except Exception as e:
+                self.logger.error(f"Возникла ошибка: {e}")
+        # Возвращаем обработанную информацию
+        return processed_info
 
 
 if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
-        per = await okx.get_full_info()
+        per = await okx.get_coins_price_vol()
         print(per)
+        print()
+        print(len(per))
+
 
     import asyncio
 

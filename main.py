@@ -10,16 +10,16 @@ if __name__ == '__main__':
 
     async def main():
         okx = OkxApi("Okx")
-        bybit = BybitApi("Okx")
+        bybit = BybitApi("Bybit")
         coinw = CoinWApi("CoinW")
 
         # Запускаем оба метода одновременно
-        task1 = asyncio.create_task(okx.get_full_info())
-        task2 = asyncio.create_task(bybit.get_full_info())
-        task3 = asyncio.create_task(coinw.get_full_info())
+        task1 = asyncio.create_task(okx.get_coins_price_vol())
+        task2 = asyncio.create_task(bybit.get_coins_price_vol())
+        task3 = asyncio.create_task(coinw.get_coins_price_vol())
 
         # Ждем, пока оба метода завершатся
-        await asyncio.gather(task1, task2,task3)
+        await asyncio.gather(task1, task2, task3)
 
         # print(task1.result())
         # print(task2.result())

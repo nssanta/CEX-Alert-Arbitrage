@@ -62,14 +62,43 @@ class BybitApi(BaseApi):
         #     self.logger.error(f"Возникла ошибка при получении информации: {e}")
         #     # Возвращаем None в случае ошибки
         #     return None
+    async def get_coins_price_vol(self):
+        """
+            Асинхронная функция для обработки данных, полученных от API.
+            А именно приводит монетную пару к единому виду и делает словарь, где
+            ключ- монетная пара, и значения котировок и объемы в двух валютах.
+            :return: Словарь с информацией или None в случае ошибки.
+        """
+        # Получаем информацию с API
+        info = await self.get_full_info()
+        # Создаем новый словарь для хранения обработанной информации
+        processed_info = {}
+        # Обрабатываем каждый элемент в полученной информации
+        for item in info:
+            try:
+                # Получаем монетную пару, преобразуем ее в нижний регистр и удаляем знак "-"
+                pair = item["symbol"].lower() #.replace("-", "")
+                # Создаем новый словарь для этой пары
+                processed_info[pair] = {
+                    "price": item["lastPrice"],
+                    "volone24": item["volume24h"],
+                    #"voltwo24": item[None]
+                }
+            except Exception as e:
+                # Если возникает исключение, логируем ошибку
+                self.logger.error(f"Возникла ошибка при обработке информации для пары {pair}: {e}")
+        # Возвращаем обработанную информацию
+        return processed_info
 
 
 if __name__ == '__main__':
     start_time = time.time()
     async def main():
-        bybit = BybitApi("Okx")
-        per = await bybit.get_full_info()
+        bybit = BybitApi("Bybit")
+        per = await bybit.get_coins_price_vol()
         print(per)
+        print()
+        print(len(per))
 
     import asyncio
     asyncio.run(main())

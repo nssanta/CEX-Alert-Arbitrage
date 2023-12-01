@@ -36,9 +36,15 @@ class BaseApi(ABC):
                 self.logger.removeHandler(handler)
     @abstractmethod
     async def get_full_info(self):
-        '''
+        """
             Метод для получения данных с Api
             :return: ответ сервера
-        '''
+        """
         pass
 
+    @abstractmethod
+    async def get_coins_price_vol(self):
+        """
+            Метод для обработки данных от сервера, для последующих операций.
+            :return:
+        """
