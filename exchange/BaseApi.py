@@ -2,7 +2,10 @@ import logging
 from abc import ABC, abstractmethod
 
 class BaseApi(ABC):
-    def __init__(self, log_file = 'base_api.log', logger = "BaseApi"):
+    def __init__(self, log_file = 'base_api.log', logger = "BaseApi", name = "Base"):
+        # Имя класса
+        self.name = name
+
         self.log_file = log_file
         self.logger = logging.getLogger(logger)
         self.logger.setLevel(logging.ERROR)
@@ -32,7 +35,7 @@ class BaseApi(ABC):
             if isinstance(handler, logging.StreamHandler):
                 self.logger.removeHandler(handler)
     @abstractmethod
-    def get_full_info(self):
+    async def get_full_info(self):
         '''
             Метод для получения данных с Api
             :return: ответ сервера
