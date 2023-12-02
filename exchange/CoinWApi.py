@@ -114,10 +114,10 @@ class CoinWApi(BaseApi):
 
     async def _create_headers(self, endpoint="", params={}):
         """
-        Создание заголовков запроса для авторизации.
-        :param endpoint: Конечная точка для запроса.
-        :param params: Параметры запроса.
-        :return: Заголовки, URL и строка параметров.
+            Создание заголовков запроса для авторизации.
+            :param endpoint: Конечная точка для запроса.
+            :param params: Параметры запроса.
+            :return: Заголовки, URL и строка параметров.
         """
         # Формирование упорядоченного словаря параметров для запроса
         sorted_params = collections.OrderedDict(sorted(params.items()))
