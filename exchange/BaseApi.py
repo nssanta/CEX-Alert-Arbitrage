@@ -1,3 +1,4 @@
+
 import logging
 from abc import ABC, abstractmethod
 
@@ -41,10 +42,16 @@ class BaseApi(ABC):
             :return: ответ сервера
         """
         pass
-
     @abstractmethod
     async def get_coins_price_vol(self):
         """
             Метод для обработки данных от сервера, для последующих операций.
             :return:
         """
+    @abstractmethod
+    async def get_network_commission(self,ccy):
+        """
+            Метод для получения коммиссии и сети вывода.
+        :return:
+        """
+

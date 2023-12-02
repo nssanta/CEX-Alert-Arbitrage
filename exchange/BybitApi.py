@@ -11,7 +11,6 @@ class BybitApi(BaseApi):
         super().__init__(log_file="bybit_api.log",logger="BybitApi")
         # Имя класса
         self.name = name
-
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.

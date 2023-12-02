@@ -1,35 +1,27 @@
+import base64
+import hashlib
+import hmac
+import json
 import time
+from datetime import datetime, timezone
 
 import httpx
 import logging
 
 from exchange.BaseApi import BaseApi
 import okx.MarketData as MarketData
+import okx.Account as Account
 
 class OkxApi(BaseApi):
     def __init__(self, name ="Okx"):
         # Создаем логгер, используя суперкласс
         super().__init__(log_file='okx_api.log',logger='OkxApi')
         self.name = name
-    # def get_full_info1(self):
-    #     """
-    #     Получаем информацию с помощью API.
-    #     :return: Результат запроса или None в случае ошибки.
-    #     """
-    #     # Устанавливаем флаг для выбора режима торговли
-    #     flag = "0"
-    #     # Создаем экземпляр класса MarketAPI с установленным флагом
-    #     marketDataAPI = MarketData.MarketAPI(flag=flag)
-    #     # Получаем информацию о тикерах с помощью метода get_tickers
-    #     try:
-    #         result = marketDataAPI.get_tickers(instType="SPOT")
-    #         # Возвращаем полученный результат
-    #         return result
-    #     except Exception as e:
-    #         # Логируем ошибку
-    #         self.logger.error(f"Возникла ошибка при получении информации: {e}")
-    #         # Возвращаем None в случае ошибки
-    #         return None
+        # Данные для Авторизации
+        self.api_key = 'be0263b3-e366-4df4-91aa-01ac1e431b5a'
+        self.secret_key = '752444EDE261ADF4EA58E24C3B553644'
+        self.passphrase = '@SuperSanta1995'
+
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.
@@ -98,13 +90,88 @@ class OkxApi(BaseApi):
                 self.logger.error(f"Возникла ошибка: {e}")
         # Возвращаем обработанную информацию
         return processed_info
+    async def get_network_commission(self,ccy):
+        """
+            Асинхронная функция для получения информации о валюте с API.
+            :param ccy: Валюта, для которой нужно получить информацию.
+            :return: Словарь с доступными сетями вывода и минимальными и максимальными комиссиями или None в случае ошибки.
+        """
+        # URL API, с которого мы будем получать данные
+        url = f"https://www.okx.com/api/v5/asset/currencies?ccy={ccy}"
+        # Эндпоинт спецеально для создания заголовка.
+        endpoint = f"/api/v5/asset/currencies?ccy={ccy}"
+        # Создаем сам заголовок.
+        headers = self._create_headers(endpoint=endpoint)
+
+        # Словарь для хранения информации о валюте
+        currency_info = {}
+        async with httpx.AsyncClient() as client:
+            try:
+                # Выполняем GET-запрос к URL
+                response = await client.get(url, headers= headers)
+                print(response)
+                # Проверяем статус ответа
+                if response.status_code == 200:
+                    # Если статус ответа 200, преобразуем ответ в JSON
+                    data = response.json()
+                    # Проверяем код ответа в данных
+                    if data["code"] == "0":
+                        # Если код ответа 0, добавляем информацию о валюте в наш словарь
+                        for item in data["data"]:
+                            if item["ccy"] == ccy:
+                                currency_info[item["chain"]] = {
+                                    "minFee": item["minFee"],
+                                    "maxFee": item["maxFee"],
+                                    # "minFeeForCtAddr": item["minFeeForCtAddr"],
+                                    # "maxFeeForCtAddr": item["maxFeeForCtAddr"]
+                                }
+                    else:
+                        # Если код ответа не 0, выводим сообщение об ошибке
+                        self.logger.error("Ошибка при получении данных")
+            except Exception as e:
+                # Если возникает исключение, логируем ошибку
+                self.logger.error(f"Возникла ошибка: {e}")
+        # Возвращаем информацию о валюте
+        return currency_info
+
+    def _create_headers(self, request_type="GET", endpoint="", body=""):
+        """
+            Специфический метод, который создает берет данные аккаунта, (API) и создает заголовок для запроса
+            :param request_type: Тип запроса
+            :param endpoint: Адресс запроса
+            :param body: Тело сообщения
+            :return: ответ от сервера
+        """
+        # Генерация временной метки
+        timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        # Преобразуем тело заголовка в json , если оно есть.
+        if body != '':
+            body = json.dumps(body)
+        # Формирование строки для подписи
+        message = timestamp + request_type.upper() + endpoint + body
+        # Создаем подпись
+        mac = hmac.new(bytes(self.secret_key, 'utf-8'), bytes(message, 'utf-8'), digestmod='sha256')
+        # Кодируем подпись в base64
+        signature = base64.b64encode(mac.digest())
+        # Формируем заголовок запроса
+        headers = {
+            'CONTENT-TYPE': 'application/json',
+            'OK-ACCESS-KEY': self.api_key,
+            'OK-ACCESS-SIGN': signature,
+            'OK-ACCESS-TIMESTAMP': timestamp,
+            'OK-ACCESS-PASSPHRASE': self.passphrase
+        }
+        # Возврат сформированных заголовков
+        return headers
+
+
 
 
 if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
-        per = await okx.get_coins_price_vol()
+        per = await okx.get_network_commission("TON")
         print(per)
         print()
         print(len(per))
@@ -115,3 +182,5 @@ if __name__ == '__main__':
     asyncio.run(main())
     end_time = time.time()
     print(f'Код отработал за {end_time - start_time}')
+
+# STX-USDT XRP-BTC TON-USDT

@@ -10,7 +10,6 @@ class CoinWApi(BaseApi):
         super().__init__(log_file="coinw_api.log", logger="CoinWApi")
         # Имя класса
         self.name = name
-
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.
@@ -48,7 +47,6 @@ class CoinWApi(BaseApi):
                 # Если возникает исключение, логируем ошибку и прерываем цикл
                 self.logger.error(f"Возникла ошибка: {e}")
         return tickers
-
     async def get_coins_price_vol(self):
         """
             Асинхронная функция для обработки данных, полученных от API.
