@@ -1,4 +1,7 @@
+import hashlib
+import hmac
 import time
+from urllib.parse import urlencode, quote_plus
 
 from exchange.BaseApi import BaseApi
 from pybit.unified_trading import HTTP
@@ -9,15 +12,21 @@ class BybitApi(BaseApi):
     def __init__(self, name ="Okx"):
         # Создаем логгер, используя суперкласс
         super().__init__(log_file="bybit_api.log",logger="BybitApi")
-        # Имя класса
+        # Имя экземпляра класса
         self.name = name
+        # Переменная для ссылки на api (сайт)
+        self.domain = "https://api.bybit.com"
+        # Данные для Авторизации
+        self.api_key = 'kg9Xn70zxuWpyadcbf'
+        self.secret_key = 'rCZqBxSk5pSxEPtw1VPDsndCxbnuJKlMhWFs'
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.
             :return: Результат запроса или None в случае ошибки.
         """
         # URL API, с которого мы будем получать данные
-        url = "https://api.bybit.com/v5/market/tickers?category=spot"
+        endpoint = "/v5/market/tickers?category=spot"
+        url = self.domain+endpoint
         # Список для хранения тикеров
         tickers = []
         # Цикл продолжается, пока есть URL для запроса (ответ не в одной странице)
@@ -50,17 +59,6 @@ class BybitApi(BaseApi):
                     break
         # Возвращаем список тикеров
         return tickers
-        # метод библиотеки не асинхроный, пока что морозим его.
-        # try:
-        #     # Получаем данные с помощью API , с реальной сети и СПОТ
-        #     session = HTTP(testnet=False)
-        #     ticket = session.get_tickers(category="spot",)
-        #     return ticket
-        # except Exception as e:
-        #     # Логируем ошибку
-        #     self.logger.error(f"Возникла ошибка при получении информации: {e}")
-        #     # Возвращаем None в случае ошибки
-        #     return None
     async def get_coins_price_vol(self):
         """
             Асинхронная функция для обработки данных, полученных от API.
@@ -91,13 +89,72 @@ class BybitApi(BaseApi):
                 self.logger.error(f"Возникла ошибка при обработке информации для пары {pair}: {e}")
         # Возвращаем обработанную информацию
         return processed_info
-
+    async def get_network_commission(self, ccy):
+        """
+        Асинхронная функция для получения информации о валюте с API.
+        :param ccy: Валюта, для которой нужно получить информацию.
+        :return: Словарь с доступными сетями вывода и минимальными и максимальными комиссиями или None в случае ошибки.
+        """
+        # Эндпоинт для запроса информации о валюте
+        endpoint = f"/asset/v3/private/coin-info/query"
+        # Создание заголовков запроса
+        headers, url, full_param_str = await self._create_headers(endpoint)
+        # Использование асинхронного клиента для отправки запроса
+        async with httpx.AsyncClient() as client:
+            # Выполнение GET-запроса к API
+            response = await client.get(f"{url}?{full_param_str}", headers=headers)
+            if response.status_code == 200:
+                # Если ответ успешный (статус 200), обработка данных
+                data = response.json()
+                currency_info = {}
+                if 'result' in data:
+                    # Парсинг информации о валюте из ответа API
+                    for item in data['result']['rows']:
+                        if item.get('coin') == ccy:
+                            for chain in item.get('chains', []):
+                                currency_info[chain["chain"]] = {
+                                    "minFee": chain["withdrawFee"],
+                                    "maxFee": chain["withdrawFee"]
+                                }
+                return currency_info
+            else:
+                # Обработка других статусов ответа (не 200)
+                return None
+    async def _create_headers(self, endpoint) -> dict:
+        """
+        Создание заголовков запроса для авторизации.
+        :param endpoint: Конечная точка для запроса.
+        :return: Заголовки, URL и строка параметров.
+        """
+        # Формирование словаря параметров для запроса
+        params = {
+            "api_key": self.api_key,
+            "timestamp": round(time.time() * 1000),
+            "recv_window": 5000
+        }
+        # Преобразование параметров в строку для формирования подписи
+        param_str = urlencode(sorted(params.items(), key=lambda tup: tup[0]))
+        # Создание подписи запроса
+        hash = hmac.new(bytes(self.secret_key, "utf-8"), param_str.encode("utf-8"), hashlib.sha256)
+        # Получение подписи в виде строки из хэша
+        signature = hash.hexdigest()
+        # Создание словаря с подписью
+        sign_real = {"sign": signature}
+        # Кодирование параметров с добавленной подписью в URL-совместимую строку
+        param_str = quote_plus(param_str, safe="=&")
+        # Формирование строки параметров с добавленной подписью для включения в запрос
+        full_param_str = f"{param_str}&sign={sign_real['sign']}"
+        # Формирование URL для запроса
+        url = self.domain + endpoint
+        # Формирование заголовков запроса
+        headers = {"Content-Type": "application/json"}
+        return headers, url, full_param_str
 
 if __name__ == '__main__':
     start_time = time.time()
     async def main():
         bybit = BybitApi("Bybit")
-        per = await bybit.get_coins_price_vol()
+        per = await bybit.get_network_commission("ETH")
         print(per)
         print()
         print(len(per))

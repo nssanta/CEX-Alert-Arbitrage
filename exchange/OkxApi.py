@@ -16,7 +16,10 @@ class OkxApi(BaseApi):
     def __init__(self, name ="Okx"):
         # Создаем логгер, используя суперкласс
         super().__init__(log_file='okx_api.log',logger='OkxApi')
+        # Переменная для имени экземпляра класса
         self.name = name
+        # Переменная для ссылки на api (сайт)
+        self.domain = "https://www.okx.com"
         # Данные для Авторизации
         self.api_key = 'be0263b3-e366-4df4-91aa-01ac1e431b5a'
         self.secret_key = '752444EDE261ADF4EA58E24C3B553644'
@@ -28,7 +31,8 @@ class OkxApi(BaseApi):
             :return: Результат запроса или None в случае ошибки.
         """
         # URL API, с которого мы будем получать данные
-        url = "https://www.okx.com/api/v5/market/tickers?instType=SPOT"
+        endpoint = "/api/v5/market/tickers?instType=SPOT"
+        url = self.domain+endpoint
         # Список для хранения тикеров
         tickers = []
         # Цикл продолжается, пока есть URL для запроса (ответ не в одной странице)
@@ -96,12 +100,12 @@ class OkxApi(BaseApi):
             :param ccy: Валюта, для которой нужно получить информацию.
             :return: Словарь с доступными сетями вывода и минимальными и максимальными комиссиями или None в случае ошибки.
         """
-        # URL API, с которого мы будем получать данные
-        url = f"https://www.okx.com/api/v5/asset/currencies?ccy={ccy}"
         # Эндпоинт спецеально для создания заголовка.
         endpoint = f"/api/v5/asset/currencies?ccy={ccy}"
         # Создаем сам заголовок.
         headers = self._create_headers(endpoint=endpoint)
+        # URL API, с которого мы будем получать данные
+        url = self.domain+endpoint
 
         # Словарь для хранения информации о валюте
         currency_info = {}
@@ -109,7 +113,6 @@ class OkxApi(BaseApi):
             try:
                 # Выполняем GET-запрос к URL
                 response = await client.get(url, headers= headers)
-                print(response)
                 # Проверяем статус ответа
                 if response.status_code == 200:
                     # Если статус ответа 200, преобразуем ответ в JSON
@@ -171,7 +174,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
-        per = await okx.get_network_commission("TON")
+        per = await okx.get_network_commission("ETH")
         print(per)
         print()
         print(len(per))
