@@ -80,9 +80,12 @@ class BybitApi(BaseApi):
                 pair = item["symbol"].lower() #.replace("-", "")
                 # Создаем новый словарь для этой пары
                 processed_info[pair] = {
+                    # Поле стоковое название монеты
+                    "coin": item["symbol"],
+                    # Поле котировки
                     "price": item["lastPrice"],
-                    "volone24": item["volume24h"],
-                    #"voltwo24": item[None]
+                    # Поле объем в монетном эквиваленте (первая часть монетной пары)
+                    "vol24": item["volume24h"],
                 }
             except Exception as e:
                 # Если возникает исключение, логируем ошибку

@@ -87,12 +87,12 @@ class OkxApi(BaseApi):
                 pair = item["instId"].lower().replace("-", "")
                 # Создаем новый словарь для этой пары
                 processed_info[pair] = {
+                    # Поле стоковое название монеты
+                    "coin": item["instId"],
                     # Поле котировки
                     "price": item["last"],
                     # Поле объем в монетном эквиваленте (первая часть монетной пары)
-                    "volone24": item["vol24h"],
-                    # Поле объем в стандартной валюте (вторая часть монетной пары)
-                    "voltwo24": item["volCcy24h"]
+                    "vol24": item["vol24h"],
                 }
             except Exception as e:
                 self.logger.error(f"Возникла ошибка: {e}")

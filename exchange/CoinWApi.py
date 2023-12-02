@@ -68,8 +68,12 @@ class CoinWApi(BaseApi):
                 data = list(item.values())[0]
                 # Создаем новый словарь для этой пары
                 processed_info[pair] = {
+                    # Поле стоковое название монеты
+                    "coin": list(item.keys())[0],
+                    # Поле котировки
                     "price": data["last"],
-                    "volone24": data["baseVolume"],
+                    # Поле объем в монетном эквиваленте (первая часть монетной пары)
+                    "vol24": data["baseVolume"],
                 }
             except Exception as e:
                 # Если возникает исключение, логируем ошибку
