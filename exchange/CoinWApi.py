@@ -1,4 +1,7 @@
+import hashlib
 import time
+
+from zope.interface.common import collections
 
 from exchange.BaseApi import BaseApi
 
@@ -10,6 +13,11 @@ class CoinWApi(BaseApi):
         super().__init__(log_file="coinw_api.log", logger="CoinWApi")
         # Имя класса
         self.name = name
+        # Переменная для ссылки на api (сайт)
+        self.domain = "https://api.coinw.com"
+        # Данные для Авторизации
+        self.api_key = "os.getenv('COINW_API_KEY')"
+        self.secret_key = "os.getenv('COINW_SECRET_KEY')"
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.
@@ -79,15 +87,60 @@ class CoinWApi(BaseApi):
         # Возвращаем обработанную информацию
         return processed_info
 
+    async def get_network_commission(self, ccy):
+        """
+            Создание заголовков запроса для авторизации.
+            :return: Заголовки, URL и строка параметров.
+        """
+        # Формирование конечной точки запроса информации о валюте
+        endpoint = self.domain + "/api/v1/public?command=returnCurrencies"
+        # Создание заголовков для запроса с авторизацией
+        headers = await self._create_headers()
+        try:
+            # Использование асинхронного клиента для отправки GET-запроса
+            async with httpx.AsyncClient() as client:
+                response = await client.get(endpoint, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            if 'data' in data and ccy in data['data']:
+                coin_info = data['data'][ccy]
+                return {"сеть*": {"minFee": coin_info["txFee"]}}
+            else:
+                return None
+        except httpx.RequestError as e:
+            # Обработка исключения в случае ошибки запроса
+            print(f"Request Exception: {e}")
+            return None
+
+    async def _create_headers(self, endpoint="", params={}):
+        """
+        Создание заголовков запроса для авторизации.
+        :param endpoint: Конечная точка для запроса.
+        :param params: Параметры запроса.
+        :return: Заголовки, URL и строка параметров.
+        """
+        # Формирование упорядоченного словаря параметров для запроса
+        sorted_params = collections.OrderedDict(sorted(params.items()))
+        # Формирование строки для создания подписи
+        signature_string = '&'.join(
+            ['{}={}'.format(k, sorted_params[k]) for k in sorted_params]) + f'&secret_key={self.secret_key}'
+        # Создание подписи запроса с использованием md5 хэширования
+        signature = hashlib.md5(signature_string.encode('utf-8')).hexdigest().upper()
+        # Формирование заголовков для запроса
+        headers = {
+            'api_key': self.api_key,
+            'sign': signature,
+        }
+        return headers
 
 if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = CoinWApi("Coin")
-        per = await okx.get_coins_price_vol()
+        per = await okx.get_network_commission("ETH")
         print(per)
         print()
-        print(f'Всего монет {len(per)}')
+        print(f'Всего {len(per)}')
 
     import asyncio
 
