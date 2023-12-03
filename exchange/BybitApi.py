@@ -154,7 +154,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         bybit = BybitApi("Bybit")
-        per = await bybit.get_network_commission("ETH")
+        per = await bybit.get_network_commission("MINA")
         print(per)
         print()
         print(len(per))

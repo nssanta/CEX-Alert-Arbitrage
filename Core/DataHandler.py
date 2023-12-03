@@ -1,32 +1,43 @@
 import asyncio
 import time
-from itertools import permutations
 
+from Data.ListCoins import ListCoins
 from exchange.BybitApi import BybitApi
 from exchange.CoinWApi import CoinWApi
 from exchange.OkxApi import OkxApi
 from collections import Counter
 
-import numpy as np
-
 class DataHandler:
     def __init__(self, name = "DataHandler"):
         self.name = name
+        self.ListCoins = ListCoins()
 
-    # async def get_common_pairs(self, apis):
-    #     # Создаем список задач для каждого API, чтобы получить данные асинхронно
-    #     tasks = [api.get_coins_price_vol() for api in apis]
-    #     # Запускаем все задачи асинхронно и ждем их завершения
-    #     results = await asyncio.gather(*tasks)
-    #     # Получаем список всех пар из всех словарей
-    #     all_pairs = [pair for result in results for pair in result.keys()]
-    #     # Считаем количество каждой пары
-    #     pair_counts = Counter(all_pairs)
-    #     # Находим общие пары, которые есть в каждом словаре
-    #     # Это те пары, количество которых равно количеству API
-    #     common_pairs = [pair for pair, count in pair_counts.items() if count == len(apis)]
-    #
-    #     return common_pairs
+    async def add_network_commission(self, all_exchange_data, apis):
+        # Обходим все пары API
+        for pair_name, pairs in all_exchange_data.items():
+            # Обходим все монеты в парах
+            for coin, data in pairs.items():
+                # Создаем список задач для каждого API
+                tasks = []
+                # Обходим все API
+                for api in apis:
+                    # Если имя API есть в данных монеты
+                    if api.name in data['data']:
+                        # Получаем уникальное имя монеты для этого API
+                        #coin_name = data['data'][api.name]['coin']
+                        onecoin = await self.ListCoins.get_first_coin(coin)#asyncio.run(self.ListCoins.get_first_coin(coin_name))
+                        # Создаем задачу для получения комиссии сети для этой монеты
+                        task = asyncio.create_task(api.get_network_commission(onecoin))
+                        tasks.append(task)
+                # Запускаем все задачи асинхронно и ждем их завершения
+                network_commissions = await asyncio.gather(*tasks)
+                # Добавляем комиссию сети в данные монеты
+                for i, api in enumerate(apis):
+                    if api.name in data['data'] and i < len(network_commissions):
+                        data['data'][api.name]['network'] = network_commissions[i]
+
+        return all_exchange_data
+
     async def get_common_pairs_and_data(self, apis):
         # Создаем список задач для каждого API, чтобы получить данные асинхронно
         tasks = [api.get_coins_price_vol() for api in apis]
@@ -54,7 +65,7 @@ class DataHandler:
                 b = float(data2[pair]['price'])
                 dif = ((a - b) / a) * 100
                 # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
-                if 0.7 < dif <= 20:
+                if 0.9 < dif <= 10:
                     result[pair] = {
                         'data': {
                             api1.name: data1[pair],
@@ -62,9 +73,7 @@ class DataHandler:
                         },
                         'dif': dif
                     }
-
         return result
-
     async def get_all_exchange_data(self, apis):
         # Получаем общий список монетных пар и данные от всех API
         common_pairs, all_data = await self.get_common_pairs_and_data(apis)
@@ -86,9 +95,8 @@ class DataHandler:
         return results
 
 if __name__ == "__main__":
+
     start_time = time.time()
-
-
     async def main():
         okx = OkxApi("Okx")
         bybit = BybitApi("Bybit")
@@ -100,26 +108,20 @@ if __name__ == "__main__":
         ex_list.append(coinw)
 
         DH = DataHandler("DH")
-
-        #   # Получаем общие пары и данные от всех API
-        #   common_pairs, all_data = await DH.get_common_pairs_and_data(ex_list)
-        # #  print(f'Общие пары: {common_pairs}')
-        #   print(f'Всего общих пар: {len(common_pairs)}')
+        await DH.ListCoins.initialize_data()
 
         # Получаем все данные обмена
         all_exchange_data = await DH.get_all_exchange_data(ex_list)
-        print(f'Все данные  : {all_exchange_data}')
-        print(f'Все уникальные данные  : {len(all_exchange_data)}')
-
+        # print(f'Все данные  : {all_exchange_data}')
+        # print(f'Все уникальные данные  : {len(all_exchange_data)}')
+        #
+        # Добавляем данные о комиссии
+        all_exchange_data2 = await DH.add_network_commission(all_exchange_data, ex_list)
+        print(f'Все данные  : {all_exchange_data2}')
+        print(f'Все уникальные данные  : {len(all_exchange_data2)}')
 
     asyncio.run(main())
 
     end_time = time.time()
     print(f'Код отработал за {end_time - start_time}')
-
-# Сделать метод который примет список с монетами,
-# потом он берет список со словарями, и берет их по парно и запускает в новом потоке скрипт который выявит разницу между
-# котировками и вернут данные, и так пока не завершатся все потоки. А потом компануем данные для передачи их анализатору.
-
-
 

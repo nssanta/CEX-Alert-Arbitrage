@@ -137,6 +137,49 @@ class OkxApi(BaseApi):
         # Возвращаем информацию о валюте
         return currency_info
 
+    async def get_firt_coin(self, instId, tdMod="isolated", ccy=None, px=None, leverage=None, unSpotOffset=None):
+        """
+        Асинхронная функция для получения максимального объема покупки и продажи для заданной монетной пары.
+        :param instId: Монетная пара (например, BTC-USDT).
+        :param tdMode: Режим торговли (cross, isolated, cash).
+        :param ccy: Валюта используемая для маржи (при необходимости).
+        :param px: Цена (необязательно, будет рассчитана по последней торговой цене).
+        :param leverage: Плечо (при необходимости).
+        :param unSpotOffset: Флаг для отключения/включения смещения риска между спотом и деривативами (при необходимости).
+        :return: Словарь с максимальным объемом покупки и продажи для указанной монетной пары.
+        """
+        # Формируем параметры запроса
+        params = {
+            'instId': instId,
+            #'tdMode': tdMode
+        }
+        if ccy:
+            params['ccy'] = ccy
+        if px:
+            params['px'] = px
+        if leverage:
+            params['leverage'] = leverage
+        if unSpotOffset is not None:
+            params['unSpotOffset'] = unSpotOffset
+
+        # Формируем URL API
+        url = self.domain+'/api/v5/account/max-size'
+
+        # Выполняем запрос к API
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(url, params=params)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data["code"] == "0" and data["data"]:
+                        return {
+                            "maxBuy": data["data"][0]["maxBuy"],
+                            "maxSell": data["data"][0]["maxSell"]
+                        }
+                    else:
+                        return {"error": "Ошибка при получении данных"}
+            except Exception as e:
+                return {"error": f"Ошибка запроса: {e}"}
     def _create_headers(self, request_type="GET", endpoint="", body=""):
         """
             Специфический метод, который создает берет данные аккаунта, (API) и создает заголовок для запроса
@@ -174,10 +217,10 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
-        per = await okx.get_network_commission("ETH")
+        per = await okx.get_firt_coin("BTC-USDT")
         print(per)
         print()
-        print(len(per))
+       # print(len(per))
 
 
     import asyncio
