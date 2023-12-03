@@ -1,9 +1,12 @@
 import asyncio
+import time
 
 from exchange.BybitApi import BybitApi
 from exchange.CoinWApi import CoinWApi
 from exchange.OkxApi import OkxApi
 from collections import Counter
+
+import numpy as np
 
 class DataHandler:
     def __init__(self, name = "DataHandler"):
@@ -24,18 +27,25 @@ class DataHandler:
 
         return common_pairs
 
-# if __name__ == "__main__":
-#     # Создаем экземпляры API
-#     okx = OkxApi("Okx")
-#     bybit = BybitApi("Bybit")
-#     coinw = CoinWApi("CoinW")
-#
-#     # Создаем экземпляр DataHandler
-#     data_handler = DataHandler()
-#
-#     # Запускаем
-#     common_pairs = asyncio.run(data_handler.get_common_pairs([okx, bybit, coinw]))
-#     print(common_pairs)
-#     print(len(common_pairs))
+if __name__ == "__main__":
+    start_time = time.time()
+    async def main():
+        okx = OkxApi("Okx")
+        bybit = BybitApi("Bybit")
+        coinw = CoinWApi("Coin W")
+        DH =DataHandler("DH")
+
+        per = await DH.get_common_pairs([okx, bybit, coinw])
+        print(per)
+        print()
+        print(f'Всего {len(per)}')
+    asyncio.run(main())
+    end_time = time.time()
+    print(f'Код отработал за {end_time - start_time}')
+
+# Сделать метод который примет список с монетами,
+# потом он берет список со словарями, и берет их по парно и запускает в новом потоке скрипт который выявит разницу между
+# котировками и вернут данные, и так пока не завершатся все потоки. А потом компануем данные для передачи их анализатору.
+
 
 

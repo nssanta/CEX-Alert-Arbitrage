@@ -24,7 +24,7 @@ class CoinWApi(BaseApi):
             :return: Результат запроса или None в случае ошибки.
         """
         # URL API, с которого мы будем получать данные
-        url = "https://api.coinw.com/api/v1/public?command=returnTicker"
+        url = self.domain+"/api/v1/public?command=returnTicker"
         # Список для хранения тикеров
         tickers = []
         async with httpx.AsyncClient() as client:
@@ -53,7 +53,7 @@ class CoinWApi(BaseApi):
                     self.logger.error("Ошибка при выполнении запроса")
             except Exception as e:
                 # Если возникает исключение, логируем ошибку и прерываем цикл
-                self.logger.error(f"Возникла ошибка: {e}")
+                self.logger.error(f"Возникла ошибка в get_full_info: {e}")
         return tickers
     async def get_coins_price_vol(self):
         """
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = CoinWApi("Coin")
-        per = await okx.get_network_commission("ETH")
+        per = await okx.get_full_info()
         print(per)
         print()
         print(f'Всего {len(per)}')
