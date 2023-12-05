@@ -66,14 +66,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not str(user) in AUTHORIZED_USERS:
         if str(user) in WhiteList:
             await update.message.reply_text('Пожалуйста, введите пароль', reply_markup=ForceReply())
-            logger.info(f"вызывали 1")
-            logger.info(f"PASSWORD {PASSWORD}")
         else:
             await update.message.reply_text('Извините, вы не в белом списке')
-            logger.info(f"вызывали 2")
     else:
         await update.message.reply_text('Вы уже авторизованы')
-        logger.info(f"вызывали 3")
 
 
 async def password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -84,16 +80,14 @@ async def password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         :param context:
         :return:
     """
-
     user = update.effective_user.id
     logger.info(f"update.message.text = {update.message.text}")
     if update.message.text == PASSWORD:
         await update.message.reply_text('Доступ разрешен')
         AUTHORIZED_USERS.append(str(user))
-        #
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         context.bot_data.setdefault('AUTHORIZED_USERS', []).append(str(user))
         #
-        logger.info(f"add user = {user}")
     else:
         await update.message.reply_text('Неверный пароль')
 
@@ -108,6 +102,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global AUTHORIZED_USERS
     user = update.effective_user.id
     logger.info(f"user in menu = {user} = {AUTHORIZED_USERS}")
+
     #if user in AUTHORIZED_USERS:
 
     if str(user) in context.bot_data.get('AUTHORIZED_USERS', []):
@@ -133,42 +128,40 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
 
     if str(user.id) in AUTHORIZED_USERS:
-        # CallbackQueries need to be answered, even if no notification to the user is needed
-        # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
         await query.answer()
 
         if query.data == "1":
-           # await update.message.reply_text("+++++ ВЫ ВКЛЮЧИЛИ УВЕДОМЛЕНИЯ!")
+            await update.effective_chat.send_message("+++++ ВЫ ВКЛЮЧИЛИ УВЕДОМЛЕНИЯ!")
+
             await start_alerts(update, context)
         elif query.data == "2":
-            #await update.message.reply_text("------ ВЫ ВЫКЛЮЧИЛИ УВЕДОМЛЕНИЯ!")
+            await update.effective_chat.send_message("------ ВЫ ВЫКЛЮЧИЛИ УВЕДОМЛЕНИЯ!")
             await stop_alerts(update, context)
         elif query.data == "3":
+            await update.effective_chat.send_message("Давай-давай пошел-пошел\nФункция находится в разработке.")
             await request_quotes(update, context)
     else:
         await query.answer()
         await query.edit_message_text(text='Извините, вы не авторизованы для использования этого меню')
 
 async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    #while True:
+    while True:
         # # Запрашиваем данные с апи
         # data_api = await DH.get_best_ticker(ex_list)
         # message = format_data(data_api)
         # await update.message.reply_text(message)
         # await asyncio.sleep(60)  # Пауза в 1 минут
     # Запрашиваем данные с апи
-    logger.info("ждем оповещения 1")
-    data_api = await DH.get_best_ticker(ex_list)
-    logger.info(f"ждем оповещения 2 = {data_api}")
-    message = await format_data(data_api)
-    # logger.info(f"ждем оповещения 3 = {message}")
-    messages = format_data(data_api).split('\n\n')  # Разделение сообщения по двойному переводу строки
-    for msg in messages:
-        await update.message.reply_text(msg)
-        await asyncio.sleep(2)
-        await update.message.reply_text(message)
-    logger.info("ждем оповещения 4")
-    await asyncio.sleep(60)  # Пауза в 1 минут
+        logger.info("ждем оповещения 1")
+        data_api = await DH.get_best_ticker(ex_list)
+        logger.info(f"ждем оповещения 2 = {data_api}")
+        messages = await format_data(data_api)
+        for msg in messages:
+            await update.effective_chat.send_message(msg)
+            await asyncio.sleep(2)
+       # await update.message.reply_text(message)
+        logger.info("ждем оповещения 4")
+        await asyncio.sleep(30)  # Пауза в 1 минут
 
 async def start_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global ALERT_TASK
@@ -205,16 +198,19 @@ async def format_data(data):
                 )
                 if 'network' in platform_data and platform_data['network'] is not None:
                     for network, network_data in platform_data['network'].items():
-                        if network_data is not None:  # Проверка на наличие данных в network_data
+                        if network_data is not None:
                             fee = network_data.get('maxFee', network_data.get('minFee'))
                             message_parts.append(f"{network} - комиссия = {fee}\n")
                         else:
                             logger.warning(f"Empty data for network: {network} in platform: {platform}")
+                            message_parts.append(f"{network} - данные отсутствуют\n")
                 else:
                     logger.warning(f"No network data found in platform: {platform}")
+                    message_parts.append("Данные о сети отсутствуют\n")
             message_parts.append(f"\nРазница котировок составляет = {coin_data['dif']}\n")
             messages.append(''.join(message_parts))
-    return "\n".join(messages)
+    return messages
+
 
 # async def format_data(data):
 #     messages = []

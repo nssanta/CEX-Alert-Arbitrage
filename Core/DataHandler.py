@@ -39,7 +39,7 @@ class DataHandler:
                 b = float(data2[pair]['price'])
                 dif = ((a - b) / a) * 100
                 # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
-                if 0.9 < dif <= 10:
+                if 0.5 < dif <= 10:
                     result[pair] = {
                         'data': {
                             api1.name: data1[pair],

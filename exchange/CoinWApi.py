@@ -104,7 +104,7 @@ class CoinWApi(BaseApi):
             data = response.json()
             if 'data' in data and ccy in data['data']:
                 coin_info = data['data'][ccy]
-                return {"Net": {"minFee": coin_info["txFee"]}}
+                return {"not chain": {"minFee": coin_info["txFee"]}}
             else:
                 return None
         except httpx.RequestError as e:
