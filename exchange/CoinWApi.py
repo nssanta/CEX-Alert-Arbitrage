@@ -72,6 +72,8 @@ class CoinWApi(BaseApi):
                 # Получаем монетную пару, преобразуем ее в нижний регистр и удаляем знак "_"
                 pair = list(item.keys())[0].lower().replace("_", "")
                 data = list(item.values())[0]
+                # Округляем число объема
+                result = round(float(data["baseVolume"]) * float(data["last"]))
                 # Создаем новый словарь для этой пары
                 processed_info[pair] = {
                     # Поле стоковое название монеты
@@ -79,7 +81,7 @@ class CoinWApi(BaseApi):
                     # Поле котировки
                     "price": data["last"],
                     # Поле объем в монетном эквиваленте (первая часть монетной пары)
-                    "vol24": data["baseVolume"]*data["last"],
+                    "vol24": data["baseVolume"],
                 }
             except Exception as e:
                 # Если возникает исключение, логируем ошибку

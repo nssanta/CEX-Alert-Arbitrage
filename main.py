@@ -51,59 +51,81 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
+# async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+#     """
+#         Стартовая функция, которая проверяет белый список на доступ к боту, а также запрашивает пароль
+#         :param update:
+#         :param context:
+#         :return:
+#     """
+#     user_id = update.effective_user.id
+#     authorized_users = context.bot_data.setdefault('AUTHORIZED_USERS', [])
+#
+#     if str(user_id) not in authorized_users:
+#     # user = update.effective_user.id
+#     # logger.info(f"user = {user}")
+#     #if not str(user_id) in AUTHORIZED_USERS:
+#         if str(user_id) in WhiteList:
+#             await update.message.reply_text('Пожалуйста, введите пароль', reply_markup=ForceReply())
+#         else:
+#             await update.message.reply_text('Извините, вы не в белом списке')
+#     else:
+#         await update.message.reply_text('Вы уже авторизованы')
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Стартовая функция, которая проверяет белый список на доступ к боту, а также запрашивает пароль
-        :param update:
-        :param context:
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
         :return:
     """
-    user = update.effective_user.id
-    logger.info(f"user = {user}")
-    if not str(user) in AUTHORIZED_USERS:
-        if str(user) in WhiteList:
+    # Получаем ID пользователя
+    user_id = update.effective_user.id
+    # Получаем список авторизованных пользователей
+    authorized_users = context.bot_data.setdefault('AUTHORIZED_USERS', [])
+    # Проверяем, авторизован ли пользователь
+    if str(user_id) not in authorized_users:
+        # Если пользователь в белом списке, запрашиваем пароль
+        if str(user_id) in WhiteList:
             await update.message.reply_text('Пожалуйста, введите пароль', reply_markup=ForceReply())
         else:
-            await update.message.reply_text('Извините, вы не в белом списке')
+            # Если пользователь не в белом списке, отправляем сообщение об ошибке
+            await update.message.reply_text('Извините, вас нет в списке')
     else:
+        # Если пользователь уже авторизован, отправляем сообщение об этом
         await update.message.reply_text('Вы уже авторизованы')
-
-
 async def password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Функция которая вызывается для авторизованых пользователей, проверяет пароль и
         при авторизации добавляет id пользователя в AUTHORIZED_USERS, список который будет проверятся дальше.
-        :param update:
-        :param context:
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
         :return:
     """
+    # Получаем ID пользователя
     user = update.effective_user.id
-    logger.info(f"update.message.text = {update.message.text}")
+    # Проверяем ответ пользователя, правильно ли он ввел пароль
     if update.message.text == PASSWORD:
-        await update.message.reply_text('Доступ разрешен')
-        AUTHORIZED_USERS.append(str(user))
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # Добавляем ID пользователя в сессию бота
         context.bot_data.setdefault('AUTHORIZED_USERS', []).append(str(user))
-        #
+        # Выводим сообщение об удачной аутентификации
+        await update.message.reply_text('Доступ разрешен')
     else:
+        # Выводим сообщение об не удачной аутентификации
         await update.message.reply_text('Неверный пароль')
-
-
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Меню которое вызывается по команде /menu и содержит кнопки.
-        :param update:
-        :param context:
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
         :return:
     """
-    global AUTHORIZED_USERS
-    user = update.effective_user.id
-    logger.info(f"user in menu = {user} = {AUTHORIZED_USERS}")
-
-    #if user in AUTHORIZED_USERS:
-
-    if str(user) in context.bot_data.get('AUTHORIZED_USERS', []):
-        #
+    # Получаем ID пользователя
+    user_id = update.effective_user.id
+    # Получаем список авторизованных пользователей
+    authorized_users = context.bot_data.setdefault('AUTHORIZED_USERS', [])
+    # Проверяем есть ли пользователь в списке авторизованых
+    if str(user_id) in authorized_users:
+        # Создаем клавиатуру для меню
         keyboard = [
             [
                 InlineKeyboardButton("Запустить оповещения", callback_data="1"),
@@ -111,171 +133,167 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             ],
             [InlineKeyboardButton("Запросить котировки", callback_data="3")],
         ]
-
+        # Создаем разметку для клавиатуры
         reply_markup = InlineKeyboardMarkup(keyboard)
-
+        # Отправляем сообщение с меню
         await update.message.reply_text("Пожалуйста выберите:", reply_markup=reply_markup)
     else:
+        # Если пользователь не авторизован, отправляем сообщение об ошибке
         await update.message.reply_text('Извините, вы не авторизованы для использования этого меню')
-
-
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Parses the CallbackQuery and updates the message text."""
+    """
+    Функция обрабатывает нажатия кнопок в меню.
+    :param update: Объект Update, содержащий информацию о текущем обновлении.
+    :param context: Объект Context, содержащий информацию о текущем контексте.
+    :return:
+    """
+    # Получаем ID пользователя
+    user_id = update.effective_user.id
+    # Получаем список авторизованных пользователей
+    authorized_users = context.bot_data.setdefault('AUTHORIZED_USERS', [])
+    # Получаем данные о нажатой кнопке
     query = update.callback_query
-    user = update.effective_user
-
-    if str(user.id) in AUTHORIZED_USERS:
+    if str(user_id) in authorized_users:
+        # Отвечаем на запрос кнопки
         await query.answer()
-
+        # Обрабатываем нажатие кнопки в зависимости от ее данных
         if query.data == "1":
-            await update.effective_chat.send_message("+++++ ВЫ ВКЛЮЧИЛИ УВЕДОМЛЕНИЯ!")
-
+            # Если пользователь нажал кнопку "Запустить оповещения"
+            await update.effective_chat.send_message("Вы включили оповещения!")
+            # Запускаем оповещения
             await start_alerts(update, context)
         elif query.data == "2":
-            await update.effective_chat.send_message("------ ВЫ ВЫКЛЮЧИЛИ УВЕДОМЛЕНИЯ!")
+            # Если пользователь нажал кнопку "Остановить оповещения"
+            await update.effective_chat.send_message("Оповещения отключены!")
+            # Останавливаем оповещения
             await stop_alerts(update, context)
         elif query.data == "3":
+            # Если пользователь нажал кнопку "Запросить котировки"
             await update.effective_chat.send_message("Давай-давай пошел-пошел\nФункция находится в разработке.")
+            # Запрашиваем котировки
             await request_quotes(update, context)
     else:
+        # Если пользователь не авторизован, отправляем сообщение об ошибке
         await query.answer()
         await query.edit_message_text(text='Извините, вы не авторизованы для использования этого меню')
-
 async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция которая делает уведомления у нее бесконечный цикл
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
     while True:
-        # # Запрашиваем данные с апи
-        # data_api = await DH.get_best_ticker(ex_list)
-        # message = format_data(data_api)
-        # await update.message.reply_text(message)
-        # await asyncio.sleep(60)  # Пауза в 1 минут
-    # Запрашиваем данные с апи
-        logger.info("ждем оповещения 1")
+        # Запрашиваем данные с апи
+        logger.info(f"ШАГ 1")
         data_api = await DH.get_best_ticker(ex_list)
-        logger.info(f"ждем оповещения 2 = {data_api}")
+        logger.info(f"DATA OF API {data_api}")
+        # Форматируем данные для отправки
+        logger.info(f"ШАГ 2")
         messages = await format_data(data_api)
+        # Отправляем каждое сообщение с задержкой 2 секунды
+        logger.info(f"ШАГ 3")
         for msg in messages:
             await update.effective_chat.send_message(msg)
             await asyncio.sleep(2)
-       # await update.message.reply_text(message)
-        logger.info("ждем оповещения 4")
-        await asyncio.sleep(30)  # Пауза в 1 минут
-
+        # Пауза в секундах для всего блока уведомлений
+        logger.info(f"ШАГ 4")
+        await asyncio.sleep(30)
 async def start_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    global ALERT_TASK
-    if ALERT_TASK is not None:
-        await update.message.reply_text('Оповещения уже запущены')
+    """
+        Функция включает уведомления
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    # Проверяем, запущены ли уже оповещения
+    if 'ALERT_TASK' in context.chat_data and context.chat_data['ALERT_TASK'] is not None:
+        await update.effective_chat.send_message('Оповещения уже запущены')
         return
-    ALERT_TASK = asyncio.create_task(alerts_loop(update, context))
-
-
+    # Запускаем цикл оповещений
+    context.chat_data['ALERT_TASK'] = asyncio.create_task(alerts_loop(update, context))
 async def stop_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    global ALERT_TASK
-    if ALERT_TASK is None:
-        await update.message.reply_text('Оповещения уже остановлены')
+    """
+        Функция выключает уведомления
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    # Проверяем, остановлены ли уже оповещения
+    if 'ALERT_TASK' not in context.chat_data or context.chat_data['ALERT_TASK'] is None:
+        await update.effective_chat.send_message('Оповещения уже остановлены')
         return
-    ALERT_TASK.cancel()
-    ALERT_TASK = None
-
-
+    # Останавливаем цикл оповещений
+    context.chat_data['ALERT_TASK'].cancel()
+    context.chat_data['ALERT_TASK'] = None
 async def request_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text('Функция в разработке, не спешите.')
+    await update.effective_chat.send_message('Функция в разработке, не спешите.')
     pass
-
 async def format_data(data):
+    """
+    Функция для форматирования данных, полученных от API, в сообщения для отправки.
+    :param data: Данные, полученные от API.
+    :return: Список сообщений для отправки.
+    """
     messages = []
     for exchange, coins in data.items():
-        logger.info(f"Processing exchange: {exchange}")
+        # Обрабатываем каждую биржу
         for coin, coin_data in coins.items():
-            logger.info(f"Processing coin: {coin}")
+            # Начинаем формирование сообщения для каждой монеты
             message_parts = [f"{exchange}\n{coin}\n"]
             for platform, platform_data in coin_data['data'].items():
-                logger.info(f"Processing platform: {platform}")
+                # Добавляем информацию о платформе в сообщение
                 message_parts.append(
                     f"{platform}: price = {platform_data['price']} , vol24 = {platform_data['vol24']}\nСети:\n"
                 )
                 if 'network' in platform_data and platform_data['network'] is not None:
                     for network, network_data in platform_data['network'].items():
                         if network_data is not None:
+                            # Получаем комиссию для каждой сети
                             fee = network_data.get('maxFee', network_data.get('minFee'))
                             message_parts.append(f"{network} - комиссия = {fee}\n")
                         else:
-                            logger.warning(f"Empty data for network: {network} in platform: {platform}")
+                            # Если данных нет, добавляем сообщение об отсутствии данных
                             message_parts.append(f"{network} - данные отсутствуют\n")
                 else:
-                    logger.warning(f"No network data found in platform: {platform}")
+                    # Если данных о сети нет, добавляем сообщение об отсутствии данных
                     message_parts.append("Данные о сети отсутствуют\n")
+            # Добавляем разницу в котировках в сообщение
             message_parts.append(f"\nРазница котировок составляет = {coin_data['dif']}\n")
+            # Добавляем сообщение в список сообщений
             messages.append(''.join(message_parts))
     return messages
-
-
-# async def format_data(data):
-#     messages = []
-#     for exchange, coins in data.items():
-#         logger.info(f"Processing exchange: {exchange}")
-#         for coin, coin_data in coins.items():
-#             logger.info(f"Processing coin: {coin}")
-#             message_parts = [f"{exchange}\n{coin}\n"]
-#             for platform, platform_data in coin_data['data'].items():
-#                 logger.info(f"Processing platform: {platform}")
-#                 message_parts.append(
-#                     f"{platform}: price = {platform_data['price']} , vol24 = {platform_data['vol24']}\nСети:\n"
-#                 )
-#                 for network, network_data in platform_data['network'].items():
-#                     logger.info(f"Processing network: {network}")
-#                     fee = network_data.get('maxFee', network_data.get('minFee'))
-#                     message_parts.append(f"{network} - комиссия = {fee}\n")
-#             message_parts.append(f"\nРазница котировок составляет = {coin_data['dif']}\n")
-#             messages.append(''.join(message_parts))
-#     return "\n".join(messages)
-
-
-# async def format_data(data):
-#     messages = []
-#     for exchange, coins in data.items():
-#         logger.info(f"{exchange} {coins}")
-#         for coin, coin_data in coins.items():
-#             logger.info(f"{coin} {coin_data}")
-#             message = f"{exchange}\n{coin}\n"
-#             for platform, platform_data in coin_data['data'].items():
-#                 message += f"{platform}: price = {platform_data['price']} , vol24 = {platform_data['vol24']}\nСети:\n"
-#                 for network, network_data in platform_data['network'].items():
-#                     fee = network_data.get('maxFee', network_data.get('minFee'))
-#                     message += f"{network} - комиссия = {fee}\n"
-#             message += f"\nРазница котировок составляет = {coin_data['dif']}\n"
-#             messages.append(message)
-#     return "\n".join(messages)
-
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Displays info on how to use the bot."""
-    await update.message.reply_text(
+    await update.effective_chat.send_message(
         "Не доступна помощь.\n"
         "Авторизуйтесь и продолжите работу."
     )
 
-
-
 def main() -> None:
-    """Run the bot."""
-    # Create the Application and pass it your bot's token.
+    """
+    Главная функция, которая запускает бота.
+    """
+    # Создаем приложение и передаем токен
     application = Application.builder().token(TOKEN).build()
-      #
+
+    # Обработчик команды "start"
     application.add_handler(CommandHandler("start", start))
+    # Обработчик для текстовых сообщений, которые не являются командами и ответами
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY, password))
-      # Меню
+    # Обработчик команды "menu"
     application.add_handler(CommandHandler("menu", menu))
-      # Кнопки
+    # Обработчик для кнопок
     application.add_handler(CallbackQueryHandler(button))
-      # Помощь
+    # Обработчик команды "help"
     application.add_handler(CommandHandler("help", help_command))
-    # ИНИЦИЛИРУЕМ ДАННЫЕ МОНЕТ В КОНТРОЛЛЕРЕ
-    #await DH.ListCoins.initialize_data()
+
+    # Инициализируем данные монет в контроллере
     asyncio.ensure_future(DH.ListCoins.initialize_data())
 
-    # Run the bot until the user presses Ctrl-C
+    # Запускаем бота до тех пор, пока пользователь не нажмет Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
-    #asyncio.run(application.run_polling(allowed_updates=Update.ALL_TYPES))
-
 
 if __name__ == "__main__":
     main()
+

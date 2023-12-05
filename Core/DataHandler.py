@@ -38,7 +38,7 @@ class DataHandler:
             :param data2: Данные второй биржи
             :param api1: Имя первой биржи
             :param api2: Имя второй биржи
-            :return: Вернет словарб с данными, где будет добавлен ключ с разницой в процентах
+            :return: Вернет словарь с данными, где будет добавлен ключ с разницой в процентах
         """
         # Создаем словарь для хранения результата
         result = {}
@@ -52,14 +52,54 @@ class DataHandler:
                 dif = ((a - b) / a) * 100
                 # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
                 if 0.8 < dif <= 2.5:
-                    result[pair] = {
-                        'data': {
-                            api1.name: data1[pair],
-                            api2.name: data2[pair]
-                        },
-                        'dif': round(dif, 4)
-                    }
+                    if a < b:
+                        result[pair] = {
+                            'data': {
+                                api1.name: data1[pair],
+                                api2.name: data2[pair]
+                            },
+                            'dif': round(dif, 4)
+                        }
+                    else:
+                        result[pair] = {
+                            'data': {
+                                api2.name: data2[pair],
+                                api1.name: data1[pair]
+                            },
+                            'dif': round(dif, 4)
+                        }
+                    # result[pair] = {
+                    #     'data': {
+                    #         api1.name: data1[pair],
+                    #         api2.name: data2[pair]
+                    #     },
+                    #     'dif': round(dif, 4)
+                    # }
         return result
+    # async def get_all_exchange_data(self, apis):
+    #     """
+    #     Функция принимает словарь с биржами и преобразует его в словарь с Биржа-Биржа -> монета -> Биржа ....
+    #     :param apis: список бирж
+    #     :return: словарь с данными и отношением и разницой.
+    #     """
+    #     # Получаем общий список монетных пар и данные от всех API
+    #     common_pairs, all_data = await self.get_common_pairs_and_data(apis)
+    #     # Создаем словарь для хранения результатов
+    #     results = {}
+    #     # Обходим все пары API
+    #     for i in range(len(apis)):
+    #         for j in range(i + 1, len(apis)):
+    #             # Получаем данные для этой пары API
+    #             data1 = {pair: all_data[i][pair] for pair in common_pairs if pair in all_data[i]}
+    #             data2 = {pair: all_data[j][pair] for pair in common_pairs if pair in all_data[j]}
+    #             result = await self.get_exchange_data(data1, data2, apis[i], apis[j])
+    #             # Добавляем результат в словарь
+    #             pair_name = f"{apis[i].name}-{apis[j].name}"
+    #             if pair_name not in results:
+    #                 results[pair_name] = {}
+    #             results[pair_name].update(result)
+    #
+    #     return results
     async def get_all_exchange_data(self, apis):
         """
         Функция принимает словарь с биржами и преобразует его в словарь с Биржа-Биржа -> монета -> Биржа ....
@@ -78,6 +118,8 @@ class DataHandler:
                 data2 = {pair: all_data[j][pair] for pair in common_pairs if pair in all_data[j]}
                 result = await self.get_exchange_data(data1, data2, apis[i], apis[j])
                 # Добавляем результат в словарь
+                # Внимание имя словаря не соответствует порядку по цени, а лишь по перебору
+                # так что при выводе информации использовать название кто первый и второй в data идет
                 pair_name = f"{apis[i].name}-{apis[j].name}"
                 if pair_name not in results:
                     results[pair_name] = {}
