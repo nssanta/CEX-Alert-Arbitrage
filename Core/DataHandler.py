@@ -12,32 +12,6 @@ class DataHandler:
         self.name = name
         self.ListCoins = ListCoins()
 
-    async def add_network_commission(self, all_exchange_data, apis):
-        # Обходим все пары API
-        for pair_name, pairs in all_exchange_data.items():
-            # Обходим все монеты в парах
-            for coin, data in pairs.items():
-                # Создаем список задач для каждого API
-                tasks = []
-                # Обходим все API
-                for api in apis:
-                    # Если имя API есть в данных монеты
-                    if api.name in data['data']:
-                        # Получаем уникальное имя монеты для этого API
-                        #coin_name = data['data'][api.name]['coin']
-                        onecoin = await self.ListCoins.get_first_coin(coin)#asyncio.run(self.ListCoins.get_first_coin(coin_name))
-                        # Создаем задачу для получения комиссии сети для этой монеты
-                        task = asyncio.create_task(api.get_network_commission(onecoin))
-                        tasks.append(task)
-                # Запускаем все задачи асинхронно и ждем их завершения
-                network_commissions = await asyncio.gather(*tasks)
-                # Добавляем комиссию сети в данные монеты
-                for i, api in enumerate(apis):
-                    if api.name in data['data'] and i < len(network_commissions):
-                        data['data'][api.name]['network'] = network_commissions[i]
-
-        return all_exchange_data
-
     async def get_common_pairs_and_data(self, apis):
         # Создаем список задач для каждого API, чтобы получить данные асинхронно
         tasks = [api.get_coins_price_vol() for api in apis]
@@ -94,6 +68,35 @@ class DataHandler:
 
         return results
 
+    async def get_best_ticker(self, apis):
+        # Запрашиваем все данные
+        all_exchange_data = await self.get_all_exchange_data(apis)
+        # Обходим все пары API
+        for pair_name, pairs in all_exchange_data.items():
+            # Обходим все монеты в парах
+            for coin, data in pairs.items():
+                # Создаем список задач для каждого API
+                tasks = []
+                # Обходим все API
+                for api in apis:
+                    # Если имя API есть в данных монеты
+                    if api.name in data['data']:
+                        # Получаем уникальное имя монеты для этого API
+                        # coin_name = data['data'][api.name]['coin']
+                        onecoin = await self.ListCoins.get_first_coin(
+                            coin)  # asyncio.run(self.ListCoins.get_first_coin(coin_name))
+                        # Создаем задачу для получения комиссии сети для этой монеты
+                        task = asyncio.create_task(api.get_network_commission(onecoin))
+                        tasks.append(task)
+                # Запускаем все задачи асинхронно и ждем их завершения
+                network_commissions = await asyncio.gather(*tasks)
+                # Добавляем комиссию сети в данные монеты
+                for i, api in enumerate(apis):
+                    if api.name in data['data'] and i < len(network_commissions):
+                        data['data'][api.name]['network'] = network_commissions[i]
+
+        return all_exchange_data
+
 if __name__ == "__main__":
 
     start_time = time.time()
@@ -112,11 +115,12 @@ if __name__ == "__main__":
 
         # Получаем все данные обмена
         all_exchange_data = await DH.get_all_exchange_data(ex_list)
+
         # print(f'Все данные  : {all_exchange_data}')
         # print(f'Все уникальные данные  : {len(all_exchange_data)}')
         #
         # Добавляем данные о комиссии
-        all_exchange_data2 = await DH.add_network_commission(all_exchange_data, ex_list)
+        all_exchange_data2 = await DH.get_best_ticker(ex_list)
         print(f'Все данные  : {all_exchange_data2}')
         print(f'Все уникальные данные  : {len(all_exchange_data2)}')
 
@@ -124,4 +128,6 @@ if __name__ == "__main__":
 
     end_time = time.time()
     print(f'Код отработал за {end_time - start_time}')
+
+
 
