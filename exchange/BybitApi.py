@@ -82,7 +82,7 @@ class BybitApi(BaseApi):
                     # Поле котировки
                     "price": item["lastPrice"],
                     # Поле объем в монетном эквиваленте (первая часть монетной пары)
-                    "vol24": item["volume24h"],
+                    "vol24": item["volume24h"]*item["lastPrice"],
                 }
             except Exception as e:
                 # Если возникает исключение, логируем ошибку
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         bybit = BybitApi("Bybit")
-        per = await bybit.get_network_commission("MINA")
+        per = await bybit.get_network_commission("PEPE")
         print(per)
         print()
         print(len(per))

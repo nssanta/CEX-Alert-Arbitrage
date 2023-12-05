@@ -88,7 +88,7 @@ class OkxApi(BaseApi):
                     # Поле котировки
                     "price": item["last"],
                     # Поле объем в монетном эквиваленте (первая часть монетной пары)
-                    "vol24": item["vol24h"],
+                    "vol24": item["vol24h"]*item["last"],
                 }
             except Exception as e:
                 self.logger.error(f"Возникла ошибка: {e}")
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
-        per = await okx.get_firt_coin("BTC-USDT")
+        per = await okx.get_network_commission("RACA")
         print(per)
         print()
        # print(len(per))

@@ -13,6 +13,11 @@ class DataHandler:
         self.ListCoins = ListCoins()
 
     async def get_common_pairs_and_data(self, apis):
+        """
+        Функция берет данные для всех монет котировку и объем
+        :param apis: список бирж
+        :return: список общих монетных пар и словарь с данными с котировками и объемом
+        """
         # Создаем список задач для каждого API, чтобы получить данные асинхронно
         tasks = [api.get_coins_price_vol() for api in apis]
         # Запускаем все задачи асинхронно и ждем их завершения
@@ -26,8 +31,15 @@ class DataHandler:
         common_pairs = [pair for pair, count in pair_counts.items() if count == len(apis)]
 
         return common_pairs, all_data
-
     async def get_exchange_data(self, data1, data2, api1, api2):
+        """
+            Функция обходит все значения двух словарей и вычисляет разницу котировок.
+            :param data1: Данные первой биржи
+            :param data2: Данные второй биржи
+            :param api1: Имя первой биржи
+            :param api2: Имя второй биржи
+            :return: Вернет словарб с данными, где будет добавлен ключ с разницой в процентах
+        """
         # Создаем словарь для хранения результата
         result = {}
         # Обходим все пары в данных
@@ -39,16 +51,21 @@ class DataHandler:
                 b = float(data2[pair]['price'])
                 dif = ((a - b) / a) * 100
                 # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
-                if 0.5 < dif <= 10:
+                if 0.8 < dif <= 2.5:
                     result[pair] = {
                         'data': {
                             api1.name: data1[pair],
                             api2.name: data2[pair]
                         },
-                        'dif': dif
+                        'dif': round(dif, 4)
                     }
         return result
     async def get_all_exchange_data(self, apis):
+        """
+        Функция принимает словарь с биржами и преобразует его в словарь с Биржа-Биржа -> монета -> Биржа ....
+        :param apis: список бирж
+        :return: словарь с данными и отношением и разницой.
+        """
         # Получаем общий список монетных пар и данные от всех API
         common_pairs, all_data = await self.get_common_pairs_and_data(apis)
         # Создаем словарь для хранения результатов
@@ -67,8 +84,12 @@ class DataHandler:
                 results[pair_name].update(result)
 
         return results
-
     async def get_best_ticker(self, apis):
+        """
+            Функция добавляет в словарь с Биржами-монетами-... , сеть и коммисию за операцию
+            :param apis: список Бирж
+            :return: словарь который содержит полную информацию
+        """
         # Запрашиваем все данные
         all_exchange_data = await self.get_all_exchange_data(apis)
         # Обходим все пары API
@@ -77,25 +98,28 @@ class DataHandler:
             for coin, data in pairs.items():
                 # Создаем список задач для каждого API
                 tasks = []
+                # Добавляем список для отслеживания порядка API
+                api_order = []
                 # Обходим все API
                 for api in apis:
                     # Если имя API есть в данных монеты
                     if api.name in data['data']:
-                        # Получаем уникальное имя монеты для этого API
-                        # coin_name = data['data'][api.name]['coin']
-                        onecoin = await self.ListCoins.get_first_coin(
-                            coin)  # asyncio.run(self.ListCoins.get_first_coin(coin_name))
+                        onecoin = await self.ListCoins.get_first_coin(coin)
                         # Создаем задачу для получения комиссии сети для этой монеты
                         task = asyncio.create_task(api.get_network_commission(onecoin))
                         tasks.append(task)
+                        # Добавляем имя API в список
+                        api_order.append(api.name)
                 # Запускаем все задачи асинхронно и ждем их завершения
                 network_commissions = await asyncio.gather(*tasks)
-                # Добавляем комиссию сети в данные монеты
-                for i, api in enumerate(apis):
-                    if api.name in data['data'] and i < len(network_commissions):
-                        data['data'][api.name]['network'] = network_commissions[i]
 
+                # Добавляем комиссию сети в данные монеты
+                for i, api_name in enumerate(api_order):
+                    # Используем api_name из списка api_order
+                    if api_name in data['data'] and i < len(network_commissions):
+                        data['data'][api_name]['network'] = network_commissions[i]
         return all_exchange_data
+
 
 if __name__ == "__main__":
 
@@ -114,12 +138,14 @@ if __name__ == "__main__":
         await DH.ListCoins.initialize_data()
 
         # Получаем все данные обмена
-        all_exchange_data = await DH.get_all_exchange_data(ex_list)
+        # all_exchange_data = await DH.get_all_exchange_data(ex_list)
+        # print(all_exchange_data)
 
         # print(f'Все данные  : {all_exchange_data}')
         # print(f'Все уникальные данные  : {len(all_exchange_data)}')
         #
-        # Добавляем данные о комиссии
+
+        #Добавляем данные о комиссии
         all_exchange_data2 = await DH.get_best_ticker(ex_list)
         print(f'Все данные  : {all_exchange_data2}')
         print(f'Все уникальные данные  : {len(all_exchange_data2)}')

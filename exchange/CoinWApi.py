@@ -79,7 +79,7 @@ class CoinWApi(BaseApi):
                     # Поле котировки
                     "price": data["last"],
                     # Поле объем в монетном эквиваленте (первая часть монетной пары)
-                    "vol24": data["baseVolume"],
+                    "vol24": data["baseVolume"]*data["last"],
                 }
             except Exception as e:
                 # Если возникает исключение, логируем ошибку
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = CoinWApi("Coin")
-        per = await okx.get_full_info()
+        per = await okx.get_network_commission("PEPE")
         print(per)
         print()
         print(f'Всего {len(per)}')
