@@ -76,7 +76,7 @@ class BybitApi(BaseApi):
                 # Получаем монетную пару, преобразуем ее в нижний регистр и удаляем знак "-"
                 pair = item["symbol"].lower() #.replace("-", "")
                 # Округляем число объема
-                result = round(float(item["volume24h"]) * float(item["lastPrice"]))
+                result = round(float(item["volume24h"]) * float(item["lastPrice"]),2)
                 # Создаем новый словарь для этой пары
                 processed_info[pair] = {
                     # Поле стоковое название монеты
@@ -84,7 +84,7 @@ class BybitApi(BaseApi):
                     # Поле котировки
                     "price": item["lastPrice"],
                     # Поле объем в монетном эквиваленте (первая часть монетной пары)\
-                    "vol24": item["volume24h"],
+                    "vol24": str(result)#item["volume24h"],
                 }
             except Exception as e:
                 # Если возникает исключение, логируем ошибку
@@ -156,7 +156,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         bybit = BybitApi("Bybit")
-        per = await bybit.get_network_commission("PEPE")
+        per = await bybit.get_full_info()
         print(per)
         print()
         print(len(per))

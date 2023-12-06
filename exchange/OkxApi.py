@@ -82,7 +82,8 @@ class OkxApi(BaseApi):
                 # Получаем монетную пару, преобразуем ее в нижний регистр и удаляем знак "-"
                 pair = item["instId"].lower().replace("-", "")
                 # Округляем число объема
-                result = round(float(item["last"]) * float(item["vol24h"]))
+                #result = round(float(item["vol24h"]) * float(item["last"]), 2)
+                resultvol = round(float(item['volCcy24h']),2)
                 # Создаем новый словарь для этой пары
                 processed_info[pair] = {
                     # Поле стоковое название монеты
@@ -90,7 +91,7 @@ class OkxApi(BaseApi):
                     # Поле котировки
                     "price": item["last"],
                     # Поле объем в монетном эквиваленте (первая часть монетной пары)
-                    "vol24": item["vol24h"],
+                    "vol24": str(resultvol),
                 }
             except Exception as e:
                 self.logger.error(f"Возникла ошибка: {e}")
@@ -219,7 +220,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
-        per = await okx.get_network_commission("RACA")
+        per = await okx.get_full_info()
         print(per)
         print()
        # print(len(per))

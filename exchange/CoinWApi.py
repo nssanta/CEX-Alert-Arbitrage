@@ -73,7 +73,8 @@ class CoinWApi(BaseApi):
                 pair = list(item.keys())[0].lower().replace("_", "")
                 data = list(item.values())[0]
                 # Округляем число объема
-                result = round(float(data["baseVolume"]) * float(data["last"]))
+                #result = round(float(data["baseVolume"]) / float(data["last"]),2)
+                resultvol = round(float(data["baseVolume"]),2)
                 # Создаем новый словарь для этой пары
                 processed_info[pair] = {
                     # Поле стоковое название монеты
@@ -81,7 +82,7 @@ class CoinWApi(BaseApi):
                     # Поле котировки
                     "price": data["last"],
                     # Поле объем в монетном эквиваленте (первая часть монетной пары)
-                    "vol24": data["baseVolume"],
+                    "vol24": str(resultvol)
                 }
             except Exception as e:
                 # Если возникает исключение, логируем ошибку
@@ -139,7 +140,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = CoinWApi("Coin")
-        per = await okx.get_network_commission("PEPE")
+        per = await okx.get_full_info()
         print(per)
         print()
         print(f'Всего {len(per)}')
