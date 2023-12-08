@@ -7,9 +7,10 @@ import asyncio
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, \
     ForceReply, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
-from telegram.ext import filters, Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler
+from telegram.ext import filters, Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, CallbackContext
 
 from Core.DataHandler import DataHandler
+from TelBot import UiBot, UiHandler
 from exchange.BybitApi import BybitApi
 from exchange.CoinWApi import CoinWApi
 from exchange.OkxApi import OkxApi
@@ -27,7 +28,8 @@ WhiteList = [
 ]
 # Пароль
 #PASSWORD = os.getenv('bot_pass')#environ.get("bot_pass")
-PASSWORD = "AmadisLoveMoneyAndCrypt"
+#PASSWORD = "AmadisLoveMoneyAndCrypt"
+PASSWORD = "A"
 # Список для авторизованых пользователей
 AUTHORIZED_USERS = []
 # Переменная для управления циклом
@@ -76,7 +78,7 @@ logger = logging.getLogger(__name__)
 #             await update.message.reply_text('Извините, вы не в белом списке')
 #     else:
 #         await update.message.reply_text('Вы уже авторизованы')
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def passauth(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Стартовая функция, которая проверяет белый список на доступ к боту, а также запрашивает пароль
         :param update: Объект Update, содержащий информацию о текущем обновлении.
@@ -91,10 +93,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if str(user_id) not in authorized_users:
         # Если пользователь в белом списке, запрашиваем пароль
         if str(user_id) in WhiteList:
-            await update.message.reply_text('Пожалуйста, введите пароль', reply_markup=ForceReply())
+            await update.message.reply_text('Пожалуйста, введите пароль', reply_markup=ReplyKeyboardRemove())
         else:
             # Если пользователь не в белом списке, отправляем сообщение об ошибке
-            await update.message.reply_text('Извините, вас нет в списке')
+            await update.message.reply_text('Извините, вас нет в списке', reply_markup=ReplyKeyboardRemove())
     else:
         # Если пользователь уже авторизован, отправляем сообщение об этом
         await update.message.reply_text('Вы уже авторизованы')
@@ -113,139 +115,12 @@ async def password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         # Добавляем ID пользователя в сессию бота
         context.bot_data.setdefault('AUTHORIZED_USERS', []).append(str(user))
         # Выводим сообщение об удачной аутентификации
-        await update.message.reply_text('Доступ разрешен')
+        await update.message.reply_text('Доступ разрешен\nДальнейшее управление через интерактивное меню',
+                                        reply_markup=UiBot.keyboard_start_menu(update, context))
     else:
         # Выводим сообщение об не удачной аутентификации
         await update.message.reply_text('Неверный пароль')
-async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-        Меню которое вызывается по команде /menu и содержит кнопки.
-        :param update: Объект Update, содержащий информацию о текущем обновлении.
-        :param context: Объект Context, содержащий информацию о текущем контексте.
-        :return:
-    """
-    # Получаем ID пользователя
-    user_id = update.effective_user.id
-    # Получаем список авторизованных пользователей
-    authorized_users = context.bot_data.setdefault('AUTHORIZED_USERS', [])
-    # Проверяем есть ли пользователь в списке авторизованых
-    if str(user_id) in authorized_users:
-        # Создаем клавиатуру для меню
-        keyboard = [
-            [
-                InlineKeyboardButton("Запустить оповещения", callback_data="1"),
-                InlineKeyboardButton("Остановить оповещения", callback_data="2"),
-            ],
-            [InlineKeyboardButton("Запросить котировки", callback_data="3")],
-        ]
-        # Создаем разметку для клавиатуры
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        # Отправляем сообщение с меню
-        await update.message.reply_text("Пожалуйста выберите:", reply_markup=reply_markup)
-    else:
-        # Если пользователь не авторизован, отправляем сообщение об ошибке
-        await update.message.reply_text('Извините, вы не авторизованы для использования этого меню')
-async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Функция обрабатывает нажатия кнопок в меню.
-    :param update: Объект Update, содержащий информацию о текущем обновлении.
-    :param context: Объект Context, содержащий информацию о текущем контексте.
-    :return:
-    """
-    # Получаем ID пользователя
-    user_id = update.effective_user.id
-    # Получаем список авторизованных пользователей
-    authorized_users = context.bot_data.setdefault('AUTHORIZED_USERS', [])
-    # Получаем данные о нажатой кнопке
-    query = update.callback_query
-    if str(user_id) in authorized_users:
-        # Отвечаем на запрос кнопки
-        await query.answer()
-        # Обрабатываем нажатие кнопки в зависимости от ее данных
-        if query.data == "1":
-            # Если пользователь нажал кнопку "Запустить оповещения"
-            await update.effective_chat.send_message("Вы включили оповещения!")
-            # Запускаем оповещения
-            await start_alerts(update, context)
-        elif query.data == "2":
-            # Если пользователь нажал кнопку "Остановить оповещения"
-            await update.effective_chat.send_message("Оповещения отключены!")
-            # Останавливаем оповещения
-            await stop_alerts(update, context)
-        elif query.data == "3":
-            # Если пользователь нажал кнопку "Запросить котировки"
-            await update.effective_chat.send_message("Давай-давай пошел-пошел\nФункция находится в разработке.")
-            # Запрашиваем котировки
-            await request_quotes(update, context)
-    else:
-        # Если пользователь не авторизован, отправляем сообщение об ошибке
-        await query.answer()
-        await query.edit_message_text(text='Извините, вы не авторизованы для использования этого меню')
-# async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#     """
-#         Меню которое вызывается по команде /menu и содержит кнопки.
-#         :param update: Объект Update, содержащий информацию о текущем обновлении.
-#         :param context: Объект Context, содержащий информацию о текущем контексте.
-#         :return:
-#     """
-#     # Получаем ID пользователя
-#     user_id = update.effective_user.id
-#     # Получаем список авторизованных пользователей
-#     authorized_users = context.bot_data.setdefault('AUTHORIZED_USERS', [])
-#     # Проверяем есть ли пользователь в списке авторизованых
-#     if str(user_id) in authorized_users:
-#         # Создаем клавиатуру для меню
-#         keyboard = [
-#             [
-#                 KeyboardButton("Запустить оповещения", ),#callback_data="1"),
-#                 KeyboardButton("Остановить оповещения", ),#callback_data="2"),
-#             ],
-#             [KeyboardButton("Запросить котировки", )],#callback_data="3")],
-#         ]
-#         # Создаем разметку для клавиатуры
-#         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-#         # Отправляем сообщение с меню
-#         await update.message.reply_text("Пожалуйста выберите:", reply_markup=reply_markup)
-#     else:
-#         # Если пользователь не авторизован, отправляем сообщение об ошибке
-#         await update.message.reply_text('Извините, вы не авторизованы для использования этого меню')
-# async def button_handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#     """
-#     Функция обрабатывает нажатия кнопок в меню.
-#     :param update: Объект Update, содержащий информацию о текущем обновлении.
-#     :param context: Объект Context, содержащий информацию о текущем контексте.
-#     :return:
-#     """
-#     # Получаем ID пользователя
-#     user_id = update.effective_user.id
-#     # Получаем список авторизованных пользователей
-#     authorized_users = context.bot_data.setdefault('AUTHORIZED_USERS', [])
-#     # Получаем данные о нажатой кнопке
-#     query = update.callback_query
-#     if str(user_id) in authorized_users:
-#         # Отвечаем на запрос кнопки
-#         await query.answer()
-#         # Обрабатываем нажатие кнопки в зависимости от ее данных
-#         if update.message.text == "Запустить оповещения":
-#             # Если пользователь нажал кнопку "Запустить оповещения"
-#             #await update.effective_chat.send_message("Вы включили оповещения!")
-#             await update.message.reply_text("Вы включили оповещения!")
-#             # Запускаем оповещения
-#             await start_alerts(update, context)
-#         elif update.message.text == "Остановить оповещения":
-#             # Если пользователь нажал кнопку "Остановить оповещения"
-#             await update.effective_chat.send_message("Оповещения отключены!")
-#             # Останавливаем оповещения
-#             await stop_alerts(update, context)
-#         elif update.message.text == "Запросить котировки":
-#             # Если пользователь нажал кнопку "Запросить котировки"
-#             await update.effective_chat.send_message("Давай-давай пошел-пошел\nФункция находится в разработке.")
-#             # Запрашиваем котировки
-#             await request_quotes(update, context)
-#     else:
-#         # Если пользователь не авторизован, отправляем сообщение об ошибке
-#         await query.answer()
-#         await query.edit_message_text(text='Извините, вы не авторизованы для использования этого меню')
+
 async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Функция которая делает уведомления у нее бесконечный цикл
@@ -284,6 +159,8 @@ async def start_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if 'ALERT_TASK' in context.chat_data and context.chat_data['ALERT_TASK'] is not None:
         await update.effective_chat.send_message('Оповещения уже запущены')
         return
+    # Сообщаем пользователю
+    await update.message.reply_text("Вы включили оповещения!")
     # Запускаем цикл оповещений
     context.chat_data['ALERT_TASK'] = asyncio.create_task(alerts_loop(update, context))
 async def stop_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -297,6 +174,8 @@ async def stop_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if 'ALERT_TASK' not in context.chat_data or context.chat_data['ALERT_TASK'] is None:
         await update.effective_chat.send_message('Оповещения уже остановлены')
         return
+    # Сообщаем пользователю
+    await update.effective_chat.send_message("Оповещения отключены!")
     # Останавливаем цикл оповещений
     context.chat_data['ALERT_TASK'].cancel()
     context.chat_data['ALERT_TASK'] = None
@@ -346,7 +225,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "Не доступна помощь.\n"
         "Авторизуйтесь и продолжите работу."
     )
-
 def main() -> None:
     """
     Главная функция, которая запускает бота.
@@ -354,13 +232,20 @@ def main() -> None:
     # Создаем приложение и передаем токен
     application = Application.builder().token(TOKEN).build()
     # Обработчик команды "start"
-    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("passauth", passauth))
     # Обработчик для текстовых сообщений, которые не являются командами и ответами
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY, password))
+
     # Обработчик команды "menu"
-    application.add_handler(CommandHandler("menu", menu))
+   # application.add_handler(CommandHandler("menu", menu))
+
+    #application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY, button_handle))
+    application.add_handler(MessageHandler(filters.Regex('^Запустить оповещения$|^Остановить оповещения$|'
+                                                         '^Настройки$|^Запросить котировки$'), UiHandler.bh_start_menu))
     # Обработчик для кнопок
-    application.add_handler(CallbackQueryHandler(button))
+    #application.add_handler(CallbackQueryHandler(button))
+
+
     # Обработчик команды "help"
     application.add_handler(CommandHandler("help", help_command))
     # Инициализируем данные монет в контроллере
