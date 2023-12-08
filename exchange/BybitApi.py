@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import inspect
 import time
 from urllib.parse import urlencode, quote_plus
 
@@ -32,6 +33,7 @@ class BybitApi(BaseApi):
         # Цикл продолжается, пока есть URL для запроса (ответ не в одной странице)
         async with httpx.AsyncClient() as client:
             while url:
+                print(f'{self.name} is making a new request to {url}')
                 try:
                     # Выполняем GET-запрос к URL
                     response = await client.get(url)

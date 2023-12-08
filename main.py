@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# pylint: disable=unused-argument
+#!/usr/bin/env python3
+
+import os
 
 import logging
 import asyncio
@@ -16,14 +17,17 @@ from exchange.OkxApi import OkxApi
 #______________________________________________________________________________________________________________________
 # СПИСОК КОНСТАНТ
 # Токен бота
-TOKEN = "6867257543:AAEzA4okBW2xLPN66Rz92Ghq9sFHZmfh9xo"
+#TOKEN = os.getenv('bot_token')#environ.get("bot_token")
+TOKEN = "os.getenv('TELEGRAM_BOT_TOKEN')"
 # Список кому доступен бот
 WhiteList = [
     '6219851487',
-    '6348339423'
+    '6348339423',
+    '1271372091',
 ]
 # Пароль
-PASSWORD = "AmadisLove"
+#PASSWORD = os.getenv('bot_pass')#environ.get("bot_pass")
+PASSWORD = "AmadisLoveMoneyAndCrypt"
 # Список для авторизованых пользователей
 AUTHORIZED_USERS = []
 # Переменная для управления циклом
@@ -256,12 +260,13 @@ async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             # Форматируем данные для отправки
             messages = await format_data(data_api)
             # Отправляем каждое сообщение с задержкой 2 секунды
-            await update.effective_chat.send_message("🚀")
+            if messages:
+                await update.effective_chat.send_message("🚀")
             for msg in messages:
                 await update.effective_chat.send_message(msg)
                 await asyncio.sleep(2)
             # Пауза в секундах для всего блока уведомлений
-            await asyncio.sleep(30)
+            await asyncio.sleep(90)
         except Exception as e:
             # Обработка ошибок (можно записать лог, отправить уведомление и т.д.)
             # Можно вывести информацию об ошибке

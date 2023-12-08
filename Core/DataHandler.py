@@ -1,5 +1,7 @@
 import asyncio
+import sys
 import time
+import traceback
 
 from Data.ListCoins import ListCoins
 from exchange.BybitApi import BybitApi
@@ -205,8 +207,23 @@ class DataHandler:
 
 if __name__ == "__main__":
 
+    # def trace_calls(frame, event, arg):
+    #     if event != 'call':
+    #         return
+    #     code = frame.f_code
+    #     function_name = code.co_name
+    #     if function_name == 'get_coins_price_vol':
+    #         print(f'Function {function_name} was called from {frame.f_back.f_code.co_name}')
+    #         traceback.print_stack(frame)
+    #
+    #
+    # sys.settrace(trace_calls)
+
     start_time = time.time()
     async def main():
+
+
+
         okx = OkxApi("Okx")
         bybit = BybitApi("Bybit")
         coinw = CoinWApi("Coin W")
