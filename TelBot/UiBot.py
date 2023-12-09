@@ -2,6 +2,8 @@ from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes
 
 
+
+
 def keyboard_start_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> ReplyKeyboardMarkup:
     """
         Функция возвращает стартовую клавиатуру после авторизации.
@@ -81,3 +83,20 @@ def keyboard_setting_spread(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
     return reply_markup
+def keyboard_setting_exchange(update: Update, context: ContextTypes.DEFAULT_TYPE) -> ReplyKeyboardMarkup:
+    """
+        Функция возвращает клавиатуру главного окна настроек.
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    # Получаем список с контекста
+    exchange_list_in_context = context.chat_data.get('EXCHANGE_LIST')
+    # Формируем клавиатуру с кнопками бирж из списка в Variable
+    #keyboard = [[exchange.name] for exchange in EXCHANGE_LIST]
+    keyboard = [[f"✅ {exchange.name}"] if exchange.is_selected else [f"❌ {exchange.name}"] for exchange in exchange_list_in_context]
+    keyboard.append(["<- назад"])
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+    return reply_markup
+

@@ -18,6 +18,8 @@ class OkxApi(BaseApi):
         super().__init__(log_file='okx_api.log',logger='OkxApi')
         # Переменная для имени экземпляра класса
         self.name = name
+        # Активирована или нет , для бота в тг
+        self.is_selected = True
         # Переменная для ссылки на api (сайт)
         self.domain = "https://www.okx.com"
         # Данные для Авторизации

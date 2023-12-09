@@ -6,6 +6,8 @@ class BaseApi(ABC):
     def __init__(self, log_file = 'base_api.log', logger = "BaseApi", name = "Base"):
         # Имя класса
         self.name = name
+        # Активирована или нет , для бота в тг
+        self.is_selected = True
 
         self.log_file = log_file
         self.logger = logging.getLogger(logger)

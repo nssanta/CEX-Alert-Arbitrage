@@ -4,7 +4,7 @@ from telegram.ext import ContextTypes
 from TelBot import UiBot
 from TelBot.CallHandler import stop_alerts, request_quotes, start_alerts
 from TelBot.Variable import SETTING_STATE, TIMER_SETTING_STATE, WORKING_STATE, SPREAD_SETTING_STATE, \
-    INPUT_TIME_SETTING_STATE, INPUT_SPRED_SETTING_STATE
+    INPUT_TIME_SETTING_STATE, INPUT_SPRED_SETTING_STATE, EXCHANGE_SETTING_STATE
 
 
 async def bh_start_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -66,7 +66,10 @@ async def bh_setting_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                             reply_markup=UiBot.keyboard_setting_spread(update, context))
             return SPREAD_SETTING_STATE
         elif text == "Биржи":
-            pass
+            await update.message.reply_text('Выберите биржи',
+                                            reply_markup=UiBot.keyboard_setting_exchange(update, context))
+            return EXCHANGE_SETTING_STATE
+
         elif text == "Монеты":
             pass
         elif text == "<- назад":
@@ -139,7 +142,6 @@ async def bh_setting_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         # Если пользователь не авторизован, отправляем сообщение об ошибке
         await update.message.reply_text('Извините, вы не авторизованы для использования этого меню',
                                         reply_markup=ReplyKeyboardRemove())
-
 async def bh_setting_spreed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Функция обрабатывает нажатия кнопок в меню настроек таймера.
@@ -194,3 +196,35 @@ async def bh_setting_spreed(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         # Если пользователь не авторизован, отправляем сообщение об ошибке
         await update.message.reply_text('Извините, вы не авторизованы для использования этого меню',
                                         reply_markup=ReplyKeyboardRemove())
+async def bh_setting_exchange(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция обрабатывает нажатия кнопок в меню настроек таймера.
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    # Получаем ID пользователя
+    user_id = update.effective_user.id
+    # Получаем список авторизованных пользователей
+    authorized_users = context.bot_data.get('AUTHORIZED_USERS')
+    # Получаем список с контекста
+    exchange_list_in_context = context.chat_data.get('EXCHANGE_LIST')
+    # Переменая хранит текст отправленый пользователем.
+    text = update.message.text
+    # Удалить символы "✅" и "❌" из текста
+    text = text.replace("✅ ", "").replace("❌ ", "")
+    if str(user_id) in authorized_users:
+        if text == "<- назад":
+            await update.message.reply_text('Меню настроек\nНе забудьте ОТКЛЮЧИТЬ и ВКЛЮЧИТЬ уведомления!!!',
+                                            reply_markup=UiBot.keyboard_setting_menu(update, context))
+            return SETTING_STATE
+        else:
+            # Найти биржу по имени и изменить значение is_selected
+            for exchange in exchange_list_in_context:
+                if exchange.name in text:
+                    exchange.is_selected = not exchange.is_selected
+                    break
+
+        await update.message.reply_text('Обновленый список',
+                                        reply_markup=UiBot.keyboard_setting_exchange(update, context))
+        return EXCHANGE_SETTING_STATE

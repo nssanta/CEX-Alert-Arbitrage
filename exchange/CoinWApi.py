@@ -13,6 +13,8 @@ class CoinWApi(BaseApi):
         super().__init__(log_file="coinw_api.log", logger="CoinWApi")
         # Имя класса
         self.name = name
+        # Активирована или нет , для бота в тг
+        self.is_selected = True
         # Переменная для ссылки на api (сайт)
         self.domain = "https://api.coinw.com"
         # Данные для Авторизации

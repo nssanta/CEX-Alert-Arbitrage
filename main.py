@@ -9,6 +9,7 @@ from telegram.ext import filters, Application, CommandHandler, ContextTypes, Mes
 
 from TelBot import UiHandler, CallHandler, Variable, UiBot
 
+
 #TOKEN = os.getenv('bot_token')#environ.get("bot_token")
 TOKEN = "os.getenv('TELEGRAM_BOT_TOKEN')"
 #______________________________________________________________________________________________________________________
@@ -72,9 +73,14 @@ def main() -> None:
     """
     Главная функция, которая запускает бота.
     """
-
     # Создаем приложение и передаем токен
     application = Application.builder().token(TOKEN).build()
+
+    # Фильтр для обработки сообщений в настроке бирж
+    #exchange_names = "|".join(exchange.name for exchange in EXCHANGE_LIST)
+    exchange_names= "Okx|Bybit|Coin W"
+    exchange_filter = filters.Regex(f"^(✅|❌) ({exchange_names})$|^<- назад$")
+
     # Создаем обработчик состояний диалога
     conversation_handler = ConversationHandler(
         entry_points=[CommandHandler('passauth', passauth)],
@@ -86,19 +92,22 @@ def main() -> None:
             Variable.WORKING_STATE: [MessageHandler(filters.Regex('^Запустить оповещения$|^Остановить оповещения$|'
                                                          '^Настройки$|^Запросить котировки$'), UiHandler.bh_start_menu)],
 
-            Variable.SETTING_STATE: [MessageHandler(filters.Regex('^Таймер$|^Спред$|'
+            Variable.SETTING_STATE: [MessageHandler(filters.Regex('^Таймер$|^Спред$|^Биржи$|'
                                                          '^Монеты$|^<- назад$'), UiHandler.bh_setting_menu)],
 
             Variable.TIMER_SETTING_STATE: [MessageHandler(filters.Regex('^30 секунд$|^1 минута$|'
             '^2 минуты$|^5 минут$|^10 минут$|^Установить вручную$|^<- назад$'), UiHandler.bh_setting_timer)],
 
-            Variable.SPREAD_SETTING_STATE:[MessageHandler(filters.Regex('^0.5 - 2.5$|^0.6 - 2.5$|^0.7 - 2.5$|'
+            Variable.SPREAD_SETTING_STATE: [MessageHandler(filters.Regex('^0.5 - 2.5$|^0.6 - 2.5$|^0.7 - 2.5$|'
             '^0.8 - 2.5$|^0.9 - 2.5$|^1 - 2.5$|^Установить вручную$|^<- назад$'), UiHandler.bh_setting_spreed)],
 
-            Variable.INPUT_TIME_SETTING_STATE:[MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
+            Variable.INPUT_TIME_SETTING_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
                                                               CallHandler.input_timer)],
             Variable.INPUT_SPRED_SETTING_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
-                                                               CallHandler.input_spred)]
+                                                               CallHandler.input_spred)],
+
+
+            Variable.EXCHANGE_SETTING_STATE: [MessageHandler(exchange_filter, UiHandler.bh_setting_exchange)]
         },
         fallbacks=[CommandHandler('help', help_command)],# заменить на что то более нужное в данном случае
     )

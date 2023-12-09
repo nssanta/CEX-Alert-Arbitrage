@@ -70,6 +70,7 @@ async def password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         # Выводим сообщение об не удачной аутентификации
         await update.message.reply_text('Неверный пароль')
         return Variable.PASS_STATE
+
 async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Функция которая делает уведомления у нее бесконечный цикл, управляется через переменную
@@ -78,21 +79,15 @@ async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         :param context: Объект Context, содержащий информацию о текущем контексте.
         :return:
     """
-    okx = OkxApi("Okx")
-    bybit = BybitApi("Bybit")
-    coinw = CoinWApi("Coin W")
-
-    ex_list = []
-    ex_list.append(okx)
-    ex_list.append(bybit)
-    ex_list.append(coinw)
+    EXCHANGE_LIST = context.chat_data.get('EXCHANGE_LIST')
+    selected_exchanges = [exchange for exchange in EXCHANGE_LIST if exchange.is_selected]
     while True:
 
         try:
             # Переменая хранит время паузы
             timer = context.chat_data.get('TIMER_ALERT')
             # Запрашиваем данные с API
-            data_api = await context.chat_data.get('DH_Class').get_best_ticker(ex_list)
+            data_api = await context.chat_data.get('DH_Class').get_best_ticker(selected_exchanges)
             # Форматируем данные для отправки
             messages = await format_data(data_api)
             # Проверяем есть ли ответ от апи

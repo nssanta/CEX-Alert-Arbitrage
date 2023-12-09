@@ -4,6 +4,9 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from Core.DataHandler import DataHandler
+from exchange.BybitApi import BybitApi
+from exchange.CoinWApi import CoinWApi
+from exchange.OkxApi import OkxApi
 
 # Список кому доступен бот
 WhiteList = [
@@ -14,6 +17,12 @@ WhiteList = [
 # Пароль
 PASSWORD = "A"
 
+# Список БИРЖ он будет передаваться в контекст чата!
+# okx = OkxApi("Okx")
+# bybit = BybitApi("Bybit")
+# coinw = CoinWApi("Coin W")
+# EXCHANGE_LIST = [okx, bybit, coinw]
+
 # Состояния диалога
 PASS_STATE = 0                  # Авторизация
 AUTH_STATE = 1                  # Ввод пароля
@@ -22,7 +31,8 @@ SETTING_STATE = 3               # Работа в контексте меню Н
 TIMER_SETTING_STATE = 4         # Состояние выбора времени таймера оповещения
 SPREAD_SETTING_STATE = 5        # Состояние выбора min-max спреда
 INPUT_TIME_SETTING_STATE = 6    # Состояние ручного ввода интервала для таймера
-INPUT_SPRED_SETTING_STATE = 7    # Состояние ручного ввода интервала для таймера
+INPUT_SPRED_SETTING_STATE = 7   # Состояние ручного ввода интервала для таймера
+EXCHANGE_SETTING_STATE = 8      # Состояние выбора бирж для фильтра
 
 async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -44,4 +54,16 @@ async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYP
     asyncio.ensure_future(context.chat_data.get('DH_Class').ListCoins.initialize_data())
     # Переменнай иницилизирует таймер отправки уведомлений
     context.chat_data.setdefault('TIMER_ALERT', 60)
+    # Переменная которая будет хранить список бирж
+    context.chat_data.setdefault('Okx', OkxApi("Okx"))
+    context.chat_data.setdefault('Bybit', BybitApi("Bybit"))
+    context.chat_data.setdefault('Coinw', CoinWApi("Coin W"))
+
+    context.chat_data.setdefault('EXCHANGE_LIST', [
+        context.chat_data.get('Okx'),
+        context.chat_data.get('Bybit'),
+        context.chat_data.get('Coinw'),
+
+    ])
+
 

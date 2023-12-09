@@ -15,6 +15,8 @@ class BybitApi(BaseApi):
         super().__init__(log_file="bybit_api.log",logger="BybitApi")
         # Имя экземпляра класса
         self.name = name
+        # Активирована или нет , для бота в тг
+        self.is_selected = True
         # Переменная для ссылки на api (сайт)
         self.domain = "https://api.bybit.com"
         # Данные для Авторизации
