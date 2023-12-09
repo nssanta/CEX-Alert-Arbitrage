@@ -167,14 +167,15 @@ class ListCoins:
         """
         # Приводим входную строку к нижнему регистру
         lower_pair = pair.lower()
+        try:
+            for key in self.data:
+                # Сравниваем ключи в нижнем регистре
+                if key.lower() == lower_pair:
+                    return self.data[key]["coin1"]
+        except Exception as e:
+            # Если монета не найдена, логируем ошибку
+            self.logger.error(f"Монета не найдена для пары {pair} ощиюка - {e} - функция get_first_coin")
 
-        for key in self.data:
-            # Сравниваем ключи в нижнем регистре
-            if key.lower() == lower_pair:
-                return self.data[key]["coin1"]
-
-        # Если монета не найдена, логируем ошибку
-        self.logger.error(f"Монета не найдена для пары {pair} - функция get_first_coin")
         return "Монета не найдена"
 
 

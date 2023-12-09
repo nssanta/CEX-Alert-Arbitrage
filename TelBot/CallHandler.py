@@ -1,0 +1,154 @@
+import asyncio
+
+from telegram import Update
+from telegram.ext import ContextTypes
+
+from TelBot import Variable, UiBot
+from exchange.BybitApi import BybitApi
+from exchange.CoinWApi import CoinWApi
+from exchange.OkxApi import OkxApi
+
+async def format_data(data):
+    """
+    Функция для форматирования данных, полученных от API, в сообщения для отправки.
+    :param data: Данные, полученные от API.
+    :return: Список сообщений для отправки.
+    """
+    messages = []
+    for exchange, coins in data.items():
+        for coin, coin_data in coins.items():
+            # Получаем названия бирж из блока 'data'
+            exchange_names = list(coin_data['data'].keys())
+            # Формируем строку с названиями бирж
+            exchange_string = ' ➤ '.join(exchange_names)
+            # Начинаем формирование сообщения для каждой монеты
+            message_parts = [f"{exchange_string}\n{'💰 ' + coin.upper()}\n"]
+            for platform, platform_data in coin_data['data'].items():
+                # Добавляем информацию о платформе в сообщение
+                message_parts.append(
+                    f"{platform}: \n💲 Цена = {platform_data['price']} , \n📊 Объем (24h) = {platform_data['vol24']}\nСети:\n"
+                )
+                if 'network' in platform_data and platform_data['network'] is not None:
+                    for network, network_data in platform_data['network'].items():
+                        if network_data is not None:
+                            # Получаем комиссию для каждой сети
+                            fee = network_data.get('maxFee', network_data.get('minFee'))
+                            message_parts.append(f"   {network} - комиссия = {fee}\n")
+                        else:
+                            # Если данных нет, добавляем сообщение об отсутствии данных
+                            message_parts.append(f"   {network} - данные отсутствуют\n")
+                else:
+                    # Если данных о сети нет, добавляем сообщение об отсутствии данных
+                    message_parts.append("   Данные о сети отсутствуют\n")
+            # Добавляем разницу в котировках в сообщение
+            message_parts.append(f"\n🎯 Разница цен: {coin_data['dif']}%\n")
+            # Добавляем сообщение в список сообщений
+            messages.append(''.join(message_parts))
+    return messages
+async def password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция которая вызывается для авторизованых пользователей, проверяет пароль и
+        при Аутентификации добавляет id пользователя в AUTHORIZED_USERS, список который будет проверятся дальше.
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    # Получаем ID пользователя
+    user = update.effective_user.id
+    # Проверяем ответ пользователя, правильно ли он ввел пароль
+    if update.message.text == Variable.PASSWORD:
+        # Добавляем ID пользователя в сессию бота
+       # context.bot_data.setdefault('AUTHORIZED_USERS', []).append(str(user))
+        context.bot_data['AUTHORIZED_USERS'].append(str(user))
+        # Выводим сообщение об удачной аутентификации
+        await update.message.reply_text('Доступ разрешен.\nДальнейшее управление через интерактивное меню.',
+                                        reply_markup=UiBot.keyboard_start_menu(update, context))
+        return Variable.WORKING_STATE
+    else:
+        # Выводим сообщение об не удачной аутентификации
+        await update.message.reply_text('Неверный пароль')
+        return Variable.PASS_STATE
+async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция которая делает уведомления у нее бесконечный цикл, управляется через переменную
+        ALERT_TASK - которая является Task async
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    okx = OkxApi("Okx")
+    bybit = BybitApi("Bybit")
+    coinw = CoinWApi("Coin W")
+
+    ex_list = []
+    ex_list.append(okx)
+    ex_list.append(bybit)
+    ex_list.append(coinw)
+    while True:
+
+        try:
+            # Переменая хранит время паузы
+            timer = context.chat_data.get('TIMER_ALERT')
+            # Запрашиваем данные с API
+            data_api = await context.chat_data.get('DH_Class').get_best_ticker(ex_list)#await DH.get_best_ticker(ex_list)
+            # Форматируем данные для отправки
+            messages = await format_data(data_api)
+            # Проверяем есть ли ответ от апи
+            if messages:
+                await update.effective_chat.send_message("🚀")
+            else:
+                await update.effective_chat.send_message("🌌")
+            # Отправляем каждое сообщение с задержкой 2 секунды
+            for msg in messages:
+                await update.effective_chat.send_message(msg)
+                await asyncio.sleep(2)
+            # Пауза в секундах для всего блока уведомлений
+            await asyncio.sleep(int(timer))
+        except Exception as e:
+            # Обработка ошибок (можно записать лог, отправить уведомление и т.д.)
+            # Можно вывести информацию об ошибке
+            #logger.error(f"Произошла ошибка: {e}")
+            # Продолжаем цикл, не прерывая выполнение программы
+            continue
+
+#_______________________________________________________________________________________________________________________
+#                               Функции которые вызываются через кнопки главного меню
+async def start_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция включает уведомления
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    # Проверяем, запущены ли уже оповещения
+    if 'ALERT_TASK' in context.chat_data and context.chat_data['ALERT_TASK'] is not None:
+        await update.effective_chat.send_message('Оповещения уже запущены')
+        return
+    # Сообщаем пользователю
+    await update.message.reply_text("Вы включили оповещения!")
+    # Запускаем цикл оповещений
+    context.chat_data['ALERT_TASK'] = asyncio.create_task(alerts_loop(update, context))
+async def stop_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция выключает уведомления
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    # Проверяем, остановлены ли уже оповещения
+    if 'ALERT_TASK' not in context.chat_data or context.chat_data['ALERT_TASK'] is None:
+        await update.effective_chat.send_message('Оповещения уже остановлены')
+        return
+    # Сообщаем пользователю
+    await update.effective_chat.send_message("Оповещения отключены!")
+    # Останавливаем цикл оповещений
+    context.chat_data['ALERT_TASK'].cancel()
+    context.chat_data['ALERT_TASK'] = None
+async def request_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.effective_chat.send_message('Функция в разработке, не спешите.')
+    pass
+#_______________________________________________________________________________________________________________________
+#_______________________________________________________________________________________________________________________
+#                               Функции которые вызываются через кнопки меню настроек
+
+#_______________________________________________________________________________________________________________________

@@ -17,16 +17,17 @@ class DataHandler:
         self.ListCoins = ListCoins()
         # Переменные хранят информацию о диапозоне фильтра
         self.max_spred = 2.5
-        self.min_spred = 0.8
-    async def set_min_max_spred(self,max: float, min: float):
+        self.min_spred = 0.5
+    def set_min_max_spred(self,min: float, max: float):
         """
             Функция устанавливает максимум и минимум диапозона , для фильтра спреда.
             :param max: максимальный процент
             :param min: минимальный процент
             :return: None
         """
-        self.max_spred = max
         self.min_spred = min
+        self.max_spred = max
+
     async def get_common_pairs_and_data(self, apis):
         """
         Функция берет данные для всех монет котировку и объем
@@ -65,6 +66,7 @@ class DataHandler:
                 a = float(data1[pair]['price'])
                 b = float(data2[pair]['price'])
                 dif = ((a - b) / a) * 100
+                print(f"{self.min_spred} {self.max_spred}")
                 # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
                 if self.min_spred < dif <= self.max_spred:
                     if a < b:
@@ -83,13 +85,6 @@ class DataHandler:
                             },
                             'dif': round(dif, 4)
                         }
-                    # result[pair] = {
-                    #     'data': {
-                    #         api1.name: data1[pair],
-                    #         api2.name: data2[pair]
-                    #     },
-                    #     'dif': round(dif, 4)
-                    # }
         return result
     async def get_all_exchange_data(self, apis):
         """
@@ -117,33 +112,6 @@ class DataHandler:
                 results[pair_name].update(result)
 
         return results
-
-    # async def get_all_exchange_data(self, apis):
-    #     """
-    #     Функция принимает словарь с биржами и преобразует его в словарь с Биржа-Биржа -> монета -> Биржа ....
-    #     :param apis: список бирж
-    #     :return: словарь с данными и отношением и разницей.
-    #     """
-    #     # Получаем общий список монетных пар и данные от всех API
-    #     common_pairs, all_data = await self.get_common_pairs_and_data(apis)
-    #     # Создаем словарь для хранения результатов
-    #     results = {}
-    #     # Создаем список задач для каждой пары API
-    #     tasks = [
-    #         (i, j, self.get_exchange_data({pair: all_data[i][pair] for pair in common_pairs if pair in all_data[i]},
-    #                                       {pair: all_data[j][pair] for pair in common_pairs if pair in all_data[j]},
-    #                                       apis[i], apis[j]))
-    #         for i in range(len(apis)) for j in range(i + 1, len(apis))]
-    #     # Запускаем все задачи асинхронно и ждем их завершения
-    #     results_list = await asyncio.gather(*(task for _, _, task in tasks))
-    #     # Добавляем результаты в словарь
-    #     for i, j, result in tasks:
-    #         pair_name = f"{apis[i].name}-{apis[j].name}"
-    #         if pair_name not in results:
-    #             results[pair_name] = {}
-    #         results[pair_name].update(results_list[i])
-    #
-    #     return results
     async def get_best_ticker(self, apis):
         """
             Функция добавляет в словарь с Биржами-монетами-... , сеть и коммисию за операцию
@@ -263,4 +231,29 @@ if __name__ == "__main__":
     print(f'Код отработал за {end_time - start_time}')
 
 
-
+# async def get_all_exchange_data(self, apis):
+    #     """
+    #     Функция принимает словарь с биржами и преобразует его в словарь с Биржа-Биржа -> монета -> Биржа ....
+    #     :param apis: список бирж
+    #     :return: словарь с данными и отношением и разницей.
+    #     """
+    #     # Получаем общий список монетных пар и данные от всех API
+    #     common_pairs, all_data = await self.get_common_pairs_and_data(apis)
+    #     # Создаем словарь для хранения результатов
+    #     results = {}
+    #     # Создаем список задач для каждой пары API
+    #     tasks = [
+    #         (i, j, self.get_exchange_data({pair: all_data[i][pair] for pair in common_pairs if pair in all_data[i]},
+    #                                       {pair: all_data[j][pair] for pair in common_pairs if pair in all_data[j]},
+    #                                       apis[i], apis[j]))
+    #         for i in range(len(apis)) for j in range(i + 1, len(apis))]
+    #     # Запускаем все задачи асинхронно и ждем их завершения
+    #     results_list = await asyncio.gather(*(task for _, _, task in tasks))
+    #     # Добавляем результаты в словарь
+    #     for i, j, result in tasks:
+    #         pair_name = f"{apis[i].name}-{apis[j].name}"
+    #         if pair_name not in results:
+    #             results[pair_name] = {}
+    #         results[pair_name].update(results_list[i])
+    #
+    #     return results
