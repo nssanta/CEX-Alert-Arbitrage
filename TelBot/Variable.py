@@ -15,12 +15,14 @@ WhiteList = [
 PASSWORD = "A"
 
 # Состояния диалога
-PASS_STATE = 0              # Авторизация
-AUTH_STATE = 1              # Ввод пароля
-WORKING_STATE = 2           # Обычное состояния, где работает главное меню
-SETTING_STATE = 3           # Работа в контексте меню Настройки
-TIMER_SETTING_STATE = 4     # Состояние выбора времени таймера оповещения
-SPREAD_SETTING_STATE = 5    # Состояние выбора min-max спреда
+PASS_STATE = 0                  # Авторизация
+AUTH_STATE = 1                  # Ввод пароля
+WORKING_STATE = 2               # Обычное состояния, где работает главное меню
+SETTING_STATE = 3               # Работа в контексте меню Настройки
+TIMER_SETTING_STATE = 4         # Состояние выбора времени таймера оповещения
+SPREAD_SETTING_STATE = 5        # Состояние выбора min-max спреда
+INPUT_TIME_SETTING_STATE = 6    # Состояние ручного ввода интервала для таймера
+INPUT_SPRED_SETTING_STATE = 7    # Состояние ручного ввода интервала для таймера
 
 async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """

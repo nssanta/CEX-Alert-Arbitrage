@@ -3,7 +3,8 @@ from telegram.ext import ContextTypes
 
 from TelBot import UiBot
 from TelBot.CallHandler import stop_alerts, request_quotes, start_alerts
-from TelBot.Variable import SETTING_STATE, TIMER_SETTING_STATE, WORKING_STATE, SPREAD_SETTING_STATE
+from TelBot.Variable import SETTING_STATE, TIMER_SETTING_STATE, WORKING_STATE, SPREAD_SETTING_STATE, \
+    INPUT_TIME_SETTING_STATE, INPUT_SPRED_SETTING_STATE
 
 
 async def bh_start_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -122,9 +123,14 @@ async def bh_setting_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                                             '\nНе забудьте Отключить и Включить уведомления заново!!!',
                                             reply_markup=UiBot.keyboard_setting_menu(update, context))
             return SETTING_STATE
-        elif text == "Установить вручную (в секундах)":
+        elif text == "Установить вручную":
+            await update.message.reply_text('Пожалуйста, введите время в секундах от 30сек - 24 часов\n'
+                                            'Надеюсь умеете считать не только крипту\n'
+                                            'Введите например 45 или 10800 (это 3 часа)\n'
+                                            'Формула: 3часа×60минут×60секунд = 10800секунд',
+                                            reply_markup=ReplyKeyboardRemove())
+            return INPUT_TIME_SETTING_STATE
 
-            pass
         elif text == "<- назад":
             await update.message.reply_text('Меню настроек', reply_markup=UiBot.keyboard_setting_menu(update, context))
             return SETTING_STATE
@@ -174,8 +180,16 @@ async def bh_setting_spreed(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             context.chat_data.get('DH_Class').set_min_max_spred(1, 2.5)
             await update.message.reply_text('Спред изменен', reply_markup=UiBot.keyboard_setting_menu(update, context))
             return SETTING_STATE
-        elif text == "Установить вручную(min-max)":
-            pass
+        elif text == "Установить вручную":
+            await update.message.reply_text('Пожалуйста, введите спред вручную\nВводите два числа через пробел!\n'
+                                            'Если число не целое, ОБЯЗАТЕЛЬНО используйте точку как разделитель\n'
+                                            'Пример: 12 21.5\n'
+                                            'Еще пример: 1.7 3.3',
+                                            reply_markup=ReplyKeyboardRemove())
+            return INPUT_SPRED_SETTING_STATE
+        elif text == "<- назад":
+            await update.message.reply_text('Меню настроек', reply_markup=UiBot.keyboard_setting_menu(update, context))
+            return SETTING_STATE
     else:
         # Если пользователь не авторизован, отправляем сообщение об ошибке
         await update.message.reply_text('Извините, вы не авторизованы для использования этого меню',

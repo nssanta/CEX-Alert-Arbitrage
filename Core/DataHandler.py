@@ -66,7 +66,6 @@ class DataHandler:
                 a = float(data1[pair]['price'])
                 b = float(data2[pair]['price'])
                 dif = ((a - b) / a) * 100
-                print(f"{self.min_spred} {self.max_spred}")
                 # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
                 if self.min_spred < dif <= self.max_spred:
                     if a < b:

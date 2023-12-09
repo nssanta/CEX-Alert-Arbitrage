@@ -4,6 +4,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from TelBot import Variable, UiBot
+from TelBot.Variable import SETTING_STATE
 from exchange.BybitApi import BybitApi
 from exchange.CoinWApi import CoinWApi
 from exchange.OkxApi import OkxApi
@@ -26,7 +27,7 @@ async def format_data(data):
             for platform, platform_data in coin_data['data'].items():
                 # Добавляем информацию о платформе в сообщение
                 message_parts.append(
-                    f"{platform}: \n💲 Цена = {platform_data['price']} , \n📊 Объем (24h) = {platform_data['vol24']}\nСети:\n"
+                    f"\n{platform}: \n💲 Цена = {platform_data['price']} , \n📊 Объем (24h) = {platform_data['vol24']}\nСети:\n"
                 )
                 if 'network' in platform_data and platform_data['network'] is not None:
                     for network, network_data in platform_data['network'].items():
@@ -61,7 +62,8 @@ async def password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        # context.bot_data.setdefault('AUTHORIZED_USERS', []).append(str(user))
         context.bot_data['AUTHORIZED_USERS'].append(str(user))
         # Выводим сообщение об удачной аутентификации
-        await update.message.reply_text('Доступ разрешен.\nДальнейшее управление через интерактивное меню.',
+        await update.message.reply_text('Доступ разрешен.\nДальнейшее управление через интерактивное меню.\n'
+                                        'Если возникнут проблемы или зависание попробуй /help ',
                                         reply_markup=UiBot.keyboard_start_menu(update, context))
         return Variable.WORKING_STATE
     else:
@@ -90,7 +92,7 @@ async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             # Переменая хранит время паузы
             timer = context.chat_data.get('TIMER_ALERT')
             # Запрашиваем данные с API
-            data_api = await context.chat_data.get('DH_Class').get_best_ticker(ex_list)#await DH.get_best_ticker(ex_list)
+            data_api = await context.chat_data.get('DH_Class').get_best_ticker(ex_list)
             # Форматируем данные для отправки
             messages = await format_data(data_api)
             # Проверяем есть ли ответ от апи
@@ -150,5 +152,60 @@ async def request_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 #_______________________________________________________________________________________________________________________
 #_______________________________________________________________________________________________________________________
 #                               Функции которые вызываются через кнопки меню настроек
+async def input_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция проверяет текст введеный пользователем для установки таймера
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    # Получаем ID пользователя
+    user = update.effective_user.id
+    # Получаем ответ пользователя
+    text = update.message.text
+    if text.isdigit():
+        number = int(text)
+        # Проверяем диапозон от 30сек - 24 часов
+        if 30 <= number <= 24 * 60 * 60:
+            context.chat_data['TIMER_ALERT'] = number
+            await update.message.reply_text(f'Таймер установлен на {number} секунд'
+                                            f'\nНе забудьте Отключить и Включить уведомления заново!!!',
+                                            reply_markup=UiBot.keyboard_setting_menu(update, context))
+            return SETTING_STATE
+        else:
+            await update.message.reply_text(f'Не возможно установить таймер на {number} секунд\n'
+                                            f'Правильный диапозон от 30 секунд до 24 часов!!!',
+                                            reply_markup=UiBot.keyboard_setting_menu(update, context))
+            return SETTING_STATE
+    else:
+        await update.message.reply_text(f'Число должно быть целым и без лишних знаков\nВведите целое число!!!',
+                                        reply_markup=UiBot.keyboard_setting_menu(update, context))
+        return SETTING_STATE
+async def input_spred(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция проверяет текст введенный пользователем для установки спреда в формате (float float)-число пробел число
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    # Получаем ID пользователя
+    user = update.effective_user.id
+    # Получаем ответ пользователя
+    text = update.message.text
+    # Разделяем ввод пользователя на две части по пробелу
+    numbers = text.split()
+    if len(numbers) == 2:
+        try:
+            # Преобразуем числа из строкового формата в числа с плавающей запятой
+            min = float(numbers[0])
+            max = float(numbers[1])
+            # Проверяем, находятся ли числа в указанном диапазоне от 0.1 до 100 и чтобы второе число было больше первого
+            if 0.1 <= min <= 100 and 0.1 <= max <= 100 and max > min:
+                context.chat_data.get('DH_Class').set_min_max_spred(min, max)
+                await update.message.reply_text(f'Спред изменен на диапозон от{min} до {max}',
+                                                reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+        except Exception as e:
+            print("!!! ERROR - input_spred")
 
 #_______________________________________________________________________________________________________________________

@@ -1,20 +1,13 @@
 #!/usr/bin/env python3
 
 import os
-
 import logging
-import asyncio
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, \
-    ForceReply, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
-from telegram.ext import filters, Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, \
-    CallbackContext, ConversationHandler
+from telegram import Update, ReplyKeyboardRemove
+from telegram.ext import filters, Application, CommandHandler, ContextTypes, MessageHandler, \
+    ConversationHandler
 
-from Core.DataHandler import DataHandler
-from TelBot import UiBot, UiHandler, CallHandler, Variable
-from exchange.BybitApi import BybitApi
-from exchange.CoinWApi import CoinWApi
-from exchange.OkxApi import OkxApi
+from TelBot import UiHandler, CallHandler, Variable, UiBot
 
 #TOKEN = os.getenv('bot_token')#environ.get("bot_token")
 TOKEN = "os.getenv('TELEGRAM_BOT_TOKEN')"
@@ -57,11 +50,24 @@ async def passauth(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         await update.message.reply_text('Вы уже авторизованы')
         return ConversationHandler.END
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Displays info on how to use the bot."""
-    await update.effective_chat.send_message(
-        "Не доступна помощь.\n"
-        "Авторизуйтесь и продолжите работу."
-    )
+    """
+        Функция будет использоватся только для авторизованых пользователей,
+        и пробовать выкинуть в главное меню (если возникнут баги)
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    # Получаем ID пользователя
+    user_id = update.effective_user.id
+    # Получаем список авторизованных пользователей
+    authorized_users = context.bot_data.get('AUTHORIZED_USERS')  # context.bot_data.setdefault('AUTHORIZED_USERS', [])
+    # Проверяем, авторизован ли пользователь
+    if str(user_id) in authorized_users:
+        await update.message.reply_text('Столкнулся с багом? Понимаю... Перезапускаю UI\n'
+                                        'Пробуй дальнейшее управление через интерактивное меню.',
+                                        reply_markup=UiBot.keyboard_start_menu(update, context))
+        return Variable.WORKING_STATE
+
 def main() -> None:
     """
     Главная функция, которая запускает бота.
@@ -84,10 +90,15 @@ def main() -> None:
                                                          '^Монеты$|^<- назад$'), UiHandler.bh_setting_menu)],
 
             Variable.TIMER_SETTING_STATE: [MessageHandler(filters.Regex('^30 секунд$|^1 минута$|'
-            '^2 минуты$|^5 минут$|^10 минут$|^Установить вручную (в секундах)$|^<- назад$'), UiHandler.bh_setting_timer)],
+            '^2 минуты$|^5 минут$|^10 минут$|^Установить вручную$|^<- назад$'), UiHandler.bh_setting_timer)],
 
             Variable.SPREAD_SETTING_STATE:[MessageHandler(filters.Regex('^0.5 - 2.5$|^0.6 - 2.5$|^0.7 - 2.5$|'
-            '^0.8 - 2.5$|^0.9 - 2.5$|^1 - 2.5$|^Установить вручную(min-max)$|^<- назад$'), UiHandler.bh_setting_spreed)],
+            '^0.8 - 2.5$|^0.9 - 2.5$|^1 - 2.5$|^Установить вручную$|^<- назад$'), UiHandler.bh_setting_spreed)],
+
+            Variable.INPUT_TIME_SETTING_STATE:[MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
+                                                              CallHandler.input_timer)],
+            Variable.INPUT_SPRED_SETTING_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
+                                                               CallHandler.input_spred)]
         },
         fallbacks=[CommandHandler('help', help_command)],# заменить на что то более нужное в данном случае
     )

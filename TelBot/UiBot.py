@@ -52,7 +52,7 @@ def keyboard_setting_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         [KeyboardButton("2 минуты")],
         [KeyboardButton("5 минут")],
         [KeyboardButton("10 минут")],
-        [KeyboardButton("Установить вручную (в секундах)", )],
+        [KeyboardButton("Установить вручную", )],
         [KeyboardButton("<- назад")],
     ]
     # Создаем разметку для клавиатуры
@@ -74,7 +74,7 @@ def keyboard_setting_spread(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         [KeyboardButton("0.8 - 2.5")],
         [KeyboardButton("0.9 - 2.5")],
         [KeyboardButton("1 - 2.5")],
-        [KeyboardButton("Установить вручную(min-max)")],
+        [KeyboardButton("Установить вручную")],
         [KeyboardButton("<- назад")],
     ]
     # Создаем разметку для клавиатуры
