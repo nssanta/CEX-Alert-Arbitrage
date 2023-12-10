@@ -43,13 +43,8 @@ WhiteList = [
     '1271372091',
 ]
 # Пароль
-PASSWORD = "A"#os.getenv('bot_pass')
-
-# Список БИРЖ он будет передаваться в контекст чата!
-# okx = OkxApi("Okx")
-# bybit = BybitApi("Bybit")
-# coinw = CoinWApi("Coin W")
-# EXCHANGE_LIST = [okx, bybit, coinw]
+PASSWORD = "A"
+#PASSWORD = os.getenv('bot_pass')
 
 # Состояния диалога
 PASS_STATE = 0                      # Авторизация

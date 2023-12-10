@@ -317,7 +317,7 @@ async def input_coin_pair(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             # Отправляем каждое сообщение с задержкой 1 секунду
             for msg in messages:
                 await update.effective_chat.send_message(msg)
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.5)
             await update.message.reply_text(f'Можете запросить снова!',
                                             reply_markup=UiBot.keyboard_start_menu(update, context))
             return WORKING_STATE
@@ -328,6 +328,9 @@ async def input_coin_pair(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             return WORKING_STATE
     except Exception as e:
         logger.error("Данные не получены")
-        await update.message.reply_text(f'Данные не получены"',
+        await update.message.reply_text(f'Данные не получены\n'
+                                        f'1) Попробуйте поменять монеты местами\n'
+                                        f'2) Попробуйте отключить какую-нибудь биржу(биржи)',
                                         reply_markup=UiBot.keyboard_start_menu(update, context))
+        return WORKING_STATE
 #_______________________________________________________________________________________________________________________
