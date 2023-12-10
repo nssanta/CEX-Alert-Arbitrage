@@ -27,6 +27,47 @@ class OkxApi(BaseApi):
         self.secret_key = '752444EDE261ADF4EA58E24C3B553644'
         self.passphrase = '@SuperSanta1995'
 
+    async def get_one_coin(self, coin_pair):
+        """
+            Асинхронная функция для получения информации о котировках и объеме торгов для указанной монетной пары.
+            :param coin_pair: Монетная пара, например, "BTC-USD".
+            :return: Словарь с информацией или None в случае ошибки.
+        """
+        # Формируем конечную точку и URL для запроса
+        endpoint = f"/api/v5/market/ticker?instId={coin_pair}"
+        url = self.domain + endpoint
+        try:
+            async with httpx.AsyncClient() as client:
+                # Отправляем GET-запрос к API
+                response = await client.get(url)
+                if response.status_code == 200:
+                    # Получаем данные в формате JSON
+                    data = response.json()
+                    if data["code"] == "0":
+                        processed_info = {}
+                        # Обработка данных для каждого элемента в полученной информации
+                        for item in data["data"]:
+                            try:
+                                # Получаем монетную пару, преобразуем ее в нижний регистр и удаляем знак "-"
+                                pair = item["instId"].lower().replace("-", "")
+                                resultvol = round(float(item['volCcy24h']), 2)
+                                # Создаем словарь с информацией о котировках и объеме торгов для этой пары
+                                processed_info[pair] = {
+                                    "coin": item["instId"],
+                                    "price": item["last"],
+                                    "vol24": str(resultvol),
+                                }
+                            except Exception as e:
+                                self.logger.error(f"Ошибка обработки элемента: {e}")
+                        return processed_info
+                    else:
+                        self.logger.error(f"Ошибка: {data['msg']}")
+                else:
+                    self.logger.error(f"Запрос завершился с кодом ошибки: {response.status_code}")
+        except Exception as e:
+            self.logger.error(f"Ошибка запроса: {e}")
+        return None
+
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.
@@ -222,7 +263,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
-        per = await okx.get_full_info()
+        per = await okx.get_one_coin("BTC-USDT")
         print(per)
         print()
        # print(len(per))

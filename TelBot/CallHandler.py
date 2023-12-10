@@ -1,11 +1,12 @@
 import asyncio
+import re
 
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
 from TelBot import Variable, UiBot
-from TelBot.Variable import SETTING_STATE
+from TelBot.Variable import SETTING_STATE, WORKING_STATE
 
 #   ЛОГИРОВАНИЕ В ФАЙЛ И КОНСОЛЬ!
 log_file = "call_handler.log"
@@ -32,11 +33,56 @@ def disable_stream_handler(self):
     for handler in logger.handlers:
         if isinstance(handler, logging.StreamHandler):
             logger.removeHandler(handler)
-async def format_data(data):
+
+async def format_data_for_coin_pair(data):
     """
-    Функция для форматирования данных, полученных от API, в сообщения для отправки.
-    :param data: Данные, полученные от API.
-    :return: Список сообщений для отправки.
+        Функция для форматирования данных, полученных от API, в сообщения для отправки на "Запросить котировки"
+        :param data: Данные, полученные от API.
+        :return: Список сообщений для отправки.
+    """
+    # # Создаем пустую строку для хранения результата
+    # result = ''
+    # # Проходим по всем элементам в данных
+    # for item in data:
+    #     # Каждый элемент в данных - это словарь, где ключ - это имя биржи
+    #     for exchange, exchange_data in item.items():
+    #         # Добавляем информацию о бирже в результат
+    #         result += f'{exchange}:\n'
+    #         result += f'💲 Цена = {exchange_data["price"]},\n'
+    #         result += f'📊 Объем (24h) = {exchange_data["vol24"]}\n'
+    #         result += 'Разница:\n'
+    #
+    #         # Добавляем информацию о разнице в результат
+    #         for dif, value in exchange_data['dif'].items():
+    #             result += f'   {dif}: {value}\n'
+    #         # Добавляем пустую строку между биржами для лучшей читаемости
+    #         result += '\n'
+    #     logger.error(f"RES = {result}")
+    # # Возвращаем итоговый результат
+    # return result
+    # Создаем пустой список для хранения сообщений
+    messages = []
+    # Проходим по всем элементам в данных
+    for item in data:
+        # Каждый элемент в данных - это словарь, где ключ - это имя биржи
+        for exchange, exchange_data in item.items():
+            # Создаем сообщение для текущей биржи
+            message = f'{exchange}:\n'
+            message += f'💲 Цена = {exchange_data["price"]},\n'
+            message += f'📊 Объем (24h) = {exchange_data["vol24"]}\n'
+            message += 'Разница:\n'
+            # Добавляем информацию о разнице в сообщение
+            for dif, value in exchange_data['dif'].items():
+                message += f'   {dif}: {value}\n'
+            # Добавляем сообщение в список сообщений
+            messages.append(message)
+    # Возвращаем список сообщений
+    return messages
+async def format_data_ticker(data):
+    """
+        Функция для форматирования данных, полученных от API, в сообщения для отправки.
+        :param data: Данные, полученные от API.
+        :return: Список сообщений для отправки.
     """
     messages = []
     try:
@@ -69,12 +115,13 @@ async def format_data(data):
                 message_parts.append(f"\n🎯 Разница цен: {coin_data['dif']}%\n")
                 # Добавляем сообщение в список сообщений
                 messages.append(''.join(message_parts))
+        return messages
 
     except Exception as e:
-        logger.error(f"Возникла ошибка: {e} функция format_data")
+        logger.error(f"Возникла ошибка: {e} функция format_data_ticker")
         return []
 
-    return messages
+
 
 async def password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
@@ -161,7 +208,7 @@ async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             # Запрашиваем данные с API
             data_api = await context.chat_data.get('DH_Class').get_best_ticker(selected_exchanges)
             # Форматируем данные для отправки
-            messages = await format_data(data_api)
+            messages = await format_data_ticker(data_api)
             # Проверяем есть ли ответ от апи
             if messages:
                 await update.effective_chat.send_message("🚀")
@@ -244,5 +291,43 @@ async def input_spred(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 return SETTING_STATE
     except Exception as e:
         logger.error(f"Возникла ошибка: {e} функция input_timer")
+async def input_coin_pair(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция проверяет текст введенный пользователем для запроса котировок по конкретной монете.
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    try:
+        # Получаем ID пользователя
+        user = update.effective_user.id
+        # Получаем ответ пользователя
+        text = update.message.text
+        # Удаляем все лишнее и в lower case
+        text = re.sub(r'\W+', ' ', text).lower()
+        # Получаем список выбраных бирж у пользователя
+        EXCHANGE_LIST = context.chat_data.get('EXCHANGE_LIST')
+        selected_exchanges = [exchange for exchange in EXCHANGE_LIST if exchange.is_selected]
+        # Запрашиваем данные с API
+        data_api = await context.chat_data.get('DH_Class').get_coin_all_exchange(ex_list=selected_exchanges, coin_pair=text)
+        # Форматируем данные для отправки
+        messages = await format_data_for_coin_pair(data_api)
+        # Проверяем есть ли ответ от апи
+        if messages:
+            # Отправляем каждое сообщение с задержкой 1 секунду
+            for msg in messages:
+                await update.effective_chat.send_message(msg)
+                await asyncio.sleep(1)
+            await update.message.reply_text(f'Можете запросить снова!',
+                                            reply_markup=UiBot.keyboard_start_menu(update, context))
+            return WORKING_STATE
+        else:
 
+            await update.message.reply_text(f'Данные не получены"',
+                                            reply_markup=UiBot.keyboard_start_menu(update, context))
+            return WORKING_STATE
+    except Exception as e:
+        logger.error("Данные не получены")
+        await update.message.reply_text(f'Данные не получены"',
+                                        reply_markup=UiBot.keyboard_start_menu(update, context))
 #_______________________________________________________________________________________________________________________

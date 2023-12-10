@@ -52,15 +52,17 @@ PASSWORD = "A"#os.getenv('bot_pass')
 # EXCHANGE_LIST = [okx, bybit, coinw]
 
 # Состояния диалога
-PASS_STATE = 0                  # Авторизация
-AUTH_STATE = 1                  # Ввод пароля
-WORKING_STATE = 2               # Обычное состояния, где работает главное меню
-SETTING_STATE = 3               # Работа в контексте меню Настройки
-TIMER_SETTING_STATE = 4         # Состояние выбора времени таймера оповещения
-SPREAD_SETTING_STATE = 5        # Состояние выбора min-max спреда
-INPUT_TIME_SETTING_STATE = 6    # Состояние ручного ввода интервала для таймера
-INPUT_SPRED_SETTING_STATE = 7   # Состояние ручного ввода интервала для таймера
-EXCHANGE_SETTING_STATE = 8      # Состояние выбора бирж для фильтра
+PASS_STATE = 0                      # Авторизация
+AUTH_STATE = 1                      # Ввод пароля
+WORKING_STATE = 2                   # Обычное состояния, где работает главное меню
+SETTING_STATE = 3                   # Работа в контексте меню Настройки
+TIMER_SETTING_STATE = 4             # Состояние выбора времени таймера оповещения
+SPREAD_SETTING_STATE = 5            # Состояние выбора min-max спреда
+INPUT_TIME_SETTING_STATE = 6        # Состояние ручного ввода интервала для таймера
+INPUT_SPRED_SETTING_STATE = 7       # Состояние ручного ввода интервала для таймера
+EXCHANGE_SETTING_STATE = 8          # Состояние выбора бирж для фильтра
+INPUT_COINPAIR_SETTING_STATE = 9    # Состояние ввода пользователем монетной пары
+
 
 async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -86,12 +88,12 @@ async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYP
         # Переменная которая будет хранить список бирж
         context.chat_data.setdefault('Okx', OkxApi("Okx"))
         context.chat_data.setdefault('Bybit', BybitApi("Bybit"))
-        context.chat_data.setdefault('Coinw', CoinWApi("Coin W"))
+        context.chat_data.setdefault('Coin W', CoinWApi("Coin W"))
 
         context.chat_data.setdefault('EXCHANGE_LIST', [
             context.chat_data.get('Okx'),
             context.chat_data.get('Bybit'),
-            context.chat_data.get('Coinw'),
+            context.chat_data.get('Coin W'),
 
         ])
     except Exception as e:

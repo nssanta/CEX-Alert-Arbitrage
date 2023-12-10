@@ -3,6 +3,7 @@ import sys
 import time
 import traceback
 
+import TelBot.CallHandler
 from Data.ListCoins import ListCoins
 from exchange.BybitApi import BybitApi
 from exchange.CoinWApi import CoinWApi
@@ -27,7 +28,6 @@ class DataHandler:
         """
         self.min_spred = min
         self.max_spred = max
-
     async def get_common_pairs_and_data(self, apis):
         """
         Функция берет данные для всех монет котировку и объем
@@ -147,30 +147,55 @@ class DataHandler:
                         data['data'][api_name]['network'] = network_commissions[i]
         return all_exchange_data
 
-    # async def get_all_exchange_data(self, apis):
-    #     """
-    #     Функция принимает словарь с биржами и преобразует его в словарь с Биржа-Биржа -> монета -> Биржа ....
-    #     :param apis: список бирж
-    #     :return: словарь с данными и отношением и разницой.
-    #     """
-    #     # Получаем общий список монетных пар и данные от всех API
-    #     common_pairs, all_data = await self.get_common_pairs_and_data(apis)
-    #     # Создаем словарь для хранения результатов
-    #     results = {}
-    #     # Обходим все пары API
-    #     for i in range(len(apis)):
-    #         for j in range(i + 1, len(apis)):
-    #             # Получаем данные для этой пары API
-    #             data1 = {pair: all_data[i][pair] for pair in common_pairs if pair in all_data[i]}
-    #             data2 = {pair: all_data[j][pair] for pair in common_pairs if pair in all_data[j]}
-    #             result = await self.get_exchange_data(data1, data2, apis[i], apis[j])
-    #             # Добавляем результат в словарь
-    #             pair_name = f"{apis[i].name}-{apis[j].name}"
-    #             if pair_name not in results:
-    #                 results[pair_name] = {}
-    #             results[pair_name].update(result)
-    #
-    #     return results
+    async def get_coin_all_exchange(self, ex_list, coin_pair):
+        try:
+            # Разделяем монетную пару
+            onecoin = await self.ListCoins.get_first_coin(coin_pair.upper())
+            twocoin = coin_pair[len(onecoin):].upper()#coin_pair.upper().split(onecoin)[1]
+            # Формируем переменных с монетными парами для каждой биржи
+            coinw_pair = f"{onecoin}_{twocoin}".lower()
+            bybit_pair = coin_pair.upper()
+            okx_pair = f"{onecoin}-{twocoin}".upper()
+            # Список задач.
+            tasks = []
+            # Проходим по списку бирж и проверяем на основе имени.
+            for exchang in ex_list:
+                if "Okx" in exchang.name:
+                    task = asyncio.create_task(exchang.get_one_coin(okx_pair))
+                    tasks.append(task)
+                elif "Bybit" in exchang.name:
+                    task = asyncio.create_task(exchang.get_one_coin(bybit_pair))
+                    tasks.append(task)
+                elif "Coin W" in exchang.name:
+                    task = asyncio.create_task(exchang.get_one_coin(coinw_pair))
+                    tasks.append(task)
+            # Запускаем все запросы одновременно
+            results = await asyncio.gather(*tasks)
+
+            final_results = []
+            for exchang, result in zip(ex_list, results):
+                result_without_first_key = {exchang.name: list(result.values())[0]}
+                final_results.append(result_without_first_key)
+
+                # Вычисляем разницу в ценах между всеми биржами
+            for i in range(len(final_results)):
+                exchang1 = list(final_results[i].keys())[0]
+                price1 = float(final_results[i][exchang1]['price'])
+                dif_dict = {}
+                for j in range(len(final_results)):
+                    if i != j:
+                        exchang2 = list(final_results[j].keys())[0]
+                        price2 = float(final_results[j][exchang2]['price'])
+                        dif = ((price1 - price2) / price1) * 100
+                        dif_dict[f'{exchang1} -> {exchang2}'] = format(-dif, '.5f')  # меняем знак
+                final_results[i][exchang1]['dif'] = dif_dict  # добавляем dif_dict в конец словаря
+
+            return final_results
+        except Exception as e:
+            print(e)
+
+
+
 
 if __name__ == "__main__":
 
@@ -188,8 +213,6 @@ if __name__ == "__main__":
 
     start_time = time.time()
     async def main():
-
-
 
         okx = OkxApi("Okx")
         bybit = BybitApi("Bybit")
@@ -213,46 +236,14 @@ if __name__ == "__main__":
         DH = DataHandler("DH")
         await DH.ListCoins.initialize_data()
 
-        # Получаем все данные обмена
-        # all_exchange_data = await DH.get_all_exchange_data(ex_list)
-        # print(all_exchange_data)
-        # print(f'Все данные  : {all_exchange_data}')
-        # print(f'Все уникальные данные  : {len(all_exchange_data)}')
-
         #Добавляем данные о комиссии
-        all_exchange_data2 = await DH.get_best_ticker(ex_list)
-        print(f'Все данные  : {all_exchange_data2}')
-        print(f'Все уникальные данные  : {len(all_exchange_data2)}')
+        all_exchange_data2 = await DH.get_coin_all_exchange(ex_list, "BTCUSDT")
+        olol = await TelBot.CallHandler.format_data_for_coin_pair(all_exchange_data2)
+        print(olol)
+        # print(f'Все данные  : {all_exchange_data2}')
+        # print(f'Все уникальные данные  : {len(all_exchange_data2)}')
 
     asyncio.run(main())
 
     end_time = time.time()
     print(f'Код отработал за {end_time - start_time}')
-
-
-# async def get_all_exchange_data(self, apis):
-    #     """
-    #     Функция принимает словарь с биржами и преобразует его в словарь с Биржа-Биржа -> монета -> Биржа ....
-    #     :param apis: список бирж
-    #     :return: словарь с данными и отношением и разницей.
-    #     """
-    #     # Получаем общий список монетных пар и данные от всех API
-    #     common_pairs, all_data = await self.get_common_pairs_and_data(apis)
-    #     # Создаем словарь для хранения результатов
-    #     results = {}
-    #     # Создаем список задач для каждой пары API
-    #     tasks = [
-    #         (i, j, self.get_exchange_data({pair: all_data[i][pair] for pair in common_pairs if pair in all_data[i]},
-    #                                       {pair: all_data[j][pair] for pair in common_pairs if pair in all_data[j]},
-    #                                       apis[i], apis[j]))
-    #         for i in range(len(apis)) for j in range(i + 1, len(apis))]
-    #     # Запускаем все задачи асинхронно и ждем их завершения
-    #     results_list = await asyncio.gather(*(task for _, _, task in tasks))
-    #     # Добавляем результаты в словарь
-    #     for i, j, result in tasks:
-    #         pair_name = f"{apis[i].name}-{apis[j].name}"
-    #         if pair_name not in results:
-    #             results[pair_name] = {}
-    #         results[pair_name].update(results_list[i])
-    #
-    #     return results

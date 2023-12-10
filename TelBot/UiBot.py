@@ -34,7 +34,6 @@ def keyboard_setting_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         [KeyboardButton("Таймер")],
         [KeyboardButton("Спред")],
         [KeyboardButton("Биржи")],
-        [KeyboardButton("Монеты")],
         [KeyboardButton("<- назад")],
     ]
     # Создаем разметку для клавиатуры

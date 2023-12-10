@@ -57,6 +57,49 @@ class CoinWApi(BaseApi):
                 # Если возникает исключение, логируем ошибку и прерываем цикл
                 self.logger.error(f"Возникла ошибка в get_full_info: {e}")
         return tickers
+    async def get_one_coin(self, coin_pair):
+        """
+                Асинхронная функция для получения информации о котировках для указанной монетной пары.
+                :param symbol: Монетная пара, например, BTC_CNYT.
+                :return: Словарь с информацией о котировках или None в случае ошибки.
+                """
+        # Формируем URL для запроса к API
+        endpoint = f"/api/v1/public?command=returnTickerInfo&symbol={coin_pair}"
+        url = f"{self.domain}{endpoint}"
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url)
+                if response.status_code == 200:
+                    data = response.json()
+                    # Проверяем наличие ключа 'data' и его непустое значение
+                    if 'data' in data and data['data'] is not None:
+                        data_info = data['data']
+                        processed_info = {}
+                        try:
+                            pair = coin_pair.lower().replace('_', '')
+                            result_vol = round(float(data_info["volValue"]), 2)
+                            processed_info[pair] = {
+                                "coin": coin_pair,
+                                "price": data_info["last"],
+                                "vol24": str(result_vol)
+                            }
+                            return processed_info
+                        except Exception as e:
+                            # Логируем ошибку обработки информации
+                            self.logger.error(f"Ошибка при обработке информации для пары {coin_pair}: {e}")
+                            return {}
+                    else:
+                        # Логируем отсутствие данных о котировках
+                        self.logger.error(f"Отсутствуют данные о котировках для {coin_pair}")
+                        return {}
+                else:
+                    # Логируем ошибку при запросе
+                    self.logger.error(f"Ошибка при запросе: {response.status_code}")
+                    return {}
+        except Exception as e:
+            # Логируем общую ошибку
+            self.logger.error(f"Ошибка: {e}")
+            return {}
     async def get_coins_price_vol(self):
         """
             Асинхронная функция для обработки данных, полученных от API.
@@ -142,7 +185,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = CoinWApi("Coin")
-        per = await okx.get_full_info()
+        per = await okx.get_one_coin("btc_usdt")
         print(per)
         print()
         print(f'Всего {len(per)}')

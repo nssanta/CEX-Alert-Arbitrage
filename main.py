@@ -15,12 +15,12 @@ TOKEN = "os.getenv('TELEGRAM_BOT_TOKEN')"
 #______________________________________________________________________________________________________________________
 
 # # Вывод логирования в терминал
-# logging.basicConfig(
-#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-# )
-# # выводим get и post
-# logging.getLogger("httpx").setLevel(logging.WARNING)
-# logger = logging.getLogger(__name__)
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+# выводим get и post
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logger = logging.getLogger(__name__)
 #______________________________________________________________________________________________________________________
 async def passauth(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """
@@ -107,7 +107,10 @@ def main() -> None:
                                                                CallHandler.input_spred)],
 
 
-            Variable.EXCHANGE_SETTING_STATE: [MessageHandler(exchange_filter, UiHandler.bh_setting_exchange)]
+            Variable.EXCHANGE_SETTING_STATE: [MessageHandler(exchange_filter, UiHandler.bh_setting_exchange)],
+
+            Variable.INPUT_COINPAIR_SETTING_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
+                                                                CallHandler.input_coin_pair)],
         },
         fallbacks=[CommandHandler('help', help_command)],# заменить на что то более нужное в данном случае
     )

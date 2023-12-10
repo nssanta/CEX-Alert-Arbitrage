@@ -62,6 +62,37 @@ class BybitApi(BaseApi):
                     break
         # Возвращаем список тикеров
         return tickers
+
+    async def get_one_coin(self, coin_pair):
+        """
+            Асинхронная функция для обработки данных, полученных от API для одной монетной пары.
+            :param coin_pair: Монетная пара, например, "BTCUSDT"
+            :return: Словарь с информацией о котировке и объеме для указанной монетной пары или None в случае ошибки.
+        """
+        try:
+            # Получаем информацию с API
+            info = await self.get_full_info()
+            # Ищем информацию для указанной монетной пары
+            for item in info:
+                pair = item["symbol"].lower()
+                if pair == coin_pair.lower():
+                    # Найдена информация для указанной монетной пары
+                    result = round(float(item["volume24h"]) * float(item["lastPrice"]), 2)
+                    processed_info = {
+                        pair: {
+                            "coin": item["symbol"],
+                            "price": item["lastPrice"],
+                            "vol24": str(result)
+                        }
+                    }
+                    return processed_info
+            # Если информация для указанной монетной пары не найдена
+            self.logger.error(f"Информация для монетной пары {coin_pair} не найдена.")
+            return None
+        except Exception as e:
+            # Если возникает исключение, логируем ошибку
+            self.logger.error(f"Возникла ошибка при обработке информации для пары {coin_pair}: {e}")
+            return None
     async def get_coins_price_vol(self):
         """
             Асинхронная функция для обработки данных, полученных от API.
@@ -159,7 +190,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         bybit = BybitApi("Bybit")
-        per = await bybit.get_full_info()
+        per = await bybit.get_one_coin("BTCUSDT")
         print(per)
         print()
         print(len(per))

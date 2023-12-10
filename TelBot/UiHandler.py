@@ -5,7 +5,7 @@ from telegram.ext import ContextTypes
 from TelBot import UiBot
 from TelBot.CallHandler import stop_alerts, request_quotes, start_alerts
 from TelBot.Variable import SETTING_STATE, TIMER_SETTING_STATE, WORKING_STATE, SPREAD_SETTING_STATE, \
-    INPUT_TIME_SETTING_STATE, INPUT_SPRED_SETTING_STATE, EXCHANGE_SETTING_STATE
+    INPUT_TIME_SETTING_STATE, INPUT_SPRED_SETTING_STATE, EXCHANGE_SETTING_STATE, INPUT_COINPAIR_SETTING_STATE
 
 #   ЛОГИРОВАНИЕ В ФАЙЛ И КОНСОЛЬ!
 log_file = "ui_handler.log"
@@ -61,8 +61,11 @@ async def bh_start_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                                 reply_markup=UiBot.keyboard_setting_menu(update, context))
                 return SETTING_STATE
             elif text == "Запросить котировки":
-                # Запрашиваем котировки
-                await request_quotes(update, context)
+                await update.message.reply_text('Пожалуйста введите монетную в формате coincoin\n'
+                                                'Две монеты слитно и без лишних знаков\n'
+                                                'Примеры: btcustd , BTCUSDTC, ETHBTC, tonusdt',
+                                                reply_markup=ReplyKeyboardRemove())
+                return INPUT_COINPAIR_SETTING_STATE
         else:
             # Если пользователь не авторизован, отправляем сообщение об ошибке
             await update.message.reply_text('Извините, вы не авторизованы для использования этого меню',
@@ -97,9 +100,6 @@ async def bh_setting_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text('Выберите биржи',
                                                 reply_markup=UiBot.keyboard_setting_exchange(update, context))
                 return EXCHANGE_SETTING_STATE
-
-            elif text == "Монеты":
-                pass
             elif text == "<- назад":
                 await update.message.reply_text("Вы в главном меню", reply_markup=UiBot.keyboard_start_menu(update, context))
                 return WORKING_STATE
