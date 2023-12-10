@@ -10,18 +10,18 @@ from telegram.ext import filters, Application, CommandHandler, ContextTypes, Mes
 from TelBot import UiHandler, CallHandler, Variable, UiBot
 
 
-#TOKEN = os.getenv('bot_token')#environ.get("bot_token")
+#TOKEN = os.getenv('bot_token')
 TOKEN = "os.getenv('TELEGRAM_BOT_TOKEN')"
 #______________________________________________________________________________________________________________________
 
-
-# Вывод логирования в терминал
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-# выводим get и post
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logger = logging.getLogger(__name__)
+# # Вывод логирования в терминал
+# logging.basicConfig(
+#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+# )
+# # выводим get и post
+# logging.getLogger("httpx").setLevel(logging.WARNING)
+# logger = logging.getLogger(__name__)
+#______________________________________________________________________________________________________________________
 async def passauth(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """
         Стартовая функция, которая проверяет белый список на доступ к боту, а также запрашивает пароль

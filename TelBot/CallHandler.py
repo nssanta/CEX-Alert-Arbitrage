@@ -1,14 +1,37 @@
 import asyncio
 
+import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
 from TelBot import Variable, UiBot
 from TelBot.Variable import SETTING_STATE
-from exchange.BybitApi import BybitApi
-from exchange.CoinWApi import CoinWApi
-from exchange.OkxApi import OkxApi
 
+#   ЛОГИРОВАНИЕ В ФАЙЛ И КОНСОЛЬ!
+log_file = "call_handler.log"
+logger = logging.getLogger("CallHandler")
+logger.setLevel(logging.ERROR)
+# Создаем файл, если он не существует
+open(log_file, 'a').close()
+# Проверяем, не добавлен ли уже файловый хендлер
+if not logger.handlers:
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler.setLevel(logging.ERROR)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    # Добавляем обработчик потока, который выводит сообщения в консоль
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.ERROR)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+def disable_stream_handler(self):
+    '''
+        Метод выключает логинг в консоль
+    '''
+    for handler in logger.handlers:
+        if isinstance(handler, logging.StreamHandler):
+            logger.removeHandler(handler)
 async def format_data(data):
     """
     Функция для форматирования данных, полученных от API, в сообщения для отправки.
@@ -16,36 +39,43 @@ async def format_data(data):
     :return: Список сообщений для отправки.
     """
     messages = []
-    for exchange, coins in data.items():
-        for coin, coin_data in coins.items():
-            # Получаем названия бирж из блока 'data'
-            exchange_names = list(coin_data['data'].keys())
-            # Формируем строку с названиями бирж
-            exchange_string = ' ➤ '.join(exchange_names)
-            # Начинаем формирование сообщения для каждой монеты
-            message_parts = [f"{exchange_string}\n{'💰 ' + coin.upper()}\n"]
-            for platform, platform_data in coin_data['data'].items():
-                # Добавляем информацию о платформе в сообщение
-                message_parts.append(
-                    f"\n{platform}: \n💲 Цена = {platform_data['price']} , \n📊 Объем (24h) = {platform_data['vol24']}\nСети:\n"
-                )
-                if 'network' in platform_data and platform_data['network'] is not None:
-                    for network, network_data in platform_data['network'].items():
-                        if network_data is not None:
-                            # Получаем комиссию для каждой сети
-                            fee = network_data.get('maxFee', network_data.get('minFee'))
-                            message_parts.append(f"   {network} - комиссия = {fee}\n")
-                        else:
-                            # Если данных нет, добавляем сообщение об отсутствии данных
-                            message_parts.append(f"   {network} - данные отсутствуют\n")
-                else:
-                    # Если данных о сети нет, добавляем сообщение об отсутствии данных
-                    message_parts.append("   Данные о сети отсутствуют\n")
-            # Добавляем разницу в котировках в сообщение
-            message_parts.append(f"\n🎯 Разница цен: {coin_data['dif']}%\n")
-            # Добавляем сообщение в список сообщений
-            messages.append(''.join(message_parts))
+    try:
+        for exchange, coins in data.items():
+            for coin, coin_data in coins.items():
+                # Получаем названия бирж из блока 'data'
+                exchange_names = list(coin_data['data'].keys())
+                # Формируем строку с названиями бирж
+                exchange_string = ' ➤ '.join(exchange_names)
+                # Начинаем формирование сообщения для каждой монеты
+                message_parts = [f"{exchange_string}\n{'💰 ' + coin.upper()}\n"]
+                for platform, platform_data in coin_data['data'].items():
+                    # Добавляем информацию о платформе в сообщение
+                    message_parts.append(
+                        f"\n{platform}: \n💲 Цена = {platform_data['price']} , \n📊 Объем (24h) = {platform_data['vol24']}\nСети:\n"
+                    )
+                    if 'network' in platform_data and platform_data['network'] is not None:
+                        for network, network_data in platform_data['network'].items():
+                            if network_data is not None:
+                                # Получаем комиссию для каждой сети
+                                fee = network_data.get('maxFee', network_data.get('minFee'))
+                                message_parts.append(f"   {network} - комиссия = {fee}\n")
+                            else:
+                                # Если данных нет, добавляем сообщение об отсутствии данных
+                                message_parts.append(f"   {network} - данные отсутствуют\n")
+                    else:
+                        # Если данных о сети нет, добавляем сообщение об отсутствии данных
+                        message_parts.append("   Данные о сети отсутствуют\n")
+                # Добавляем разницу в котировках в сообщение
+                message_parts.append(f"\n🎯 Разница цен: {coin_data['dif']}%\n")
+                # Добавляем сообщение в список сообщений
+                messages.append(''.join(message_parts))
+
+    except Exception as e:
+        logger.error(f"Возникла ошибка: {e} функция format_data")
+        return []
+
     return messages
+
 async def password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Функция которая вызывается для авторизованых пользователей, проверяет пароль и
@@ -54,23 +84,66 @@ async def password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         :param context: Объект Context, содержащий информацию о текущем контексте.
         :return:
     """
+
     # Получаем ID пользователя
     user = update.effective_user.id
-    # Проверяем ответ пользователя, правильно ли он ввел пароль
-    if update.message.text == Variable.PASSWORD:
-        # Добавляем ID пользователя в сессию бота
-       # context.bot_data.setdefault('AUTHORIZED_USERS', []).append(str(user))
-        context.bot_data['AUTHORIZED_USERS'].append(str(user))
-        # Выводим сообщение об удачной аутентификации
-        await update.message.reply_text('Доступ разрешен.\nДальнейшее управление через интерактивное меню.\n'
-                                        'Если возникнут проблемы или зависание попробуй /help ',
-                                        reply_markup=UiBot.keyboard_start_menu(update, context))
-        return Variable.WORKING_STATE
-    else:
-        # Выводим сообщение об не удачной аутентификации
-        await update.message.reply_text('Неверный пароль')
-        return Variable.PASS_STATE
+    try:
+        # Проверяем ответ пользователя, правильно ли он ввел пароль
+        if update.message.text == Variable.PASSWORD:
+            # Добавляем ID пользователя в сессию бота
+           # context.bot_data.setdefault('AUTHORIZED_USERS', []).append(str(user))
+            context.bot_data['AUTHORIZED_USERS'].append(str(user))
+            # Выводим сообщение об удачной аутентификации
+            await update.message.reply_text('Доступ разрешен.\nДальнейшее управление через интерактивное меню.\n'
+                                            'Если возникнут проблемы или зависание попробуй /help ',
+                                            reply_markup=UiBot.keyboard_start_menu(update, context))
+            return Variable.WORKING_STATE
+        else:
+            # Выводим сообщение об не удачной аутентификации
+            await update.message.reply_text('Неверный пароль')
+            return Variable.PASS_STATE
+    except Exception as e:
+        logger.error(f"Возникла ошибка: {e} функция password")
 
+#_______________________________________________________________________________________________________________________
+#                               Функции для оповещений
+async def start_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция включает уведомления
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    try:
+        # Проверяем, запущены ли уже оповещения
+        if 'ALERT_TASK' in context.chat_data and context.chat_data['ALERT_TASK'] is not None:
+            await update.effective_chat.send_message('Оповещения уже запущены')
+            return
+        # Сообщаем пользователю
+        await update.message.reply_text("Вы включили оповещения!")
+        # Запускаем цикл оповещений
+        context.chat_data['ALERT_TASK'] = asyncio.create_task(alerts_loop(update, context))
+    except Exception as e:
+        logger.error(f"Возникла ошибка: {e} функция start_alerts")
+async def stop_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция выключает уведомления
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    try:
+        # Проверяем, остановлены ли уже оповещения
+        if 'ALERT_TASK' not in context.chat_data or context.chat_data['ALERT_TASK'] is None:
+            await update.effective_chat.send_message('Оповещения уже остановлены')
+            return
+        # Сообщаем пользователю
+        await update.effective_chat.send_message("Оповещения отключены!")
+        # Останавливаем цикл оповещений
+        context.chat_data['ALERT_TASK'].cancel()
+        context.chat_data['ALERT_TASK'] = None
+    except Exception as e:
+        logger.error(f"Возникла ошибка: {e} функция stop_alert")
 async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Функция которая делает уведомления у нее бесконечный цикл, управляется через переменную
@@ -82,7 +155,6 @@ async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     EXCHANGE_LIST = context.chat_data.get('EXCHANGE_LIST')
     selected_exchanges = [exchange for exchange in EXCHANGE_LIST if exchange.is_selected]
     while True:
-
         try:
             # Переменая хранит время паузы
             timer = context.chat_data.get('TIMER_ALERT')
@@ -102,51 +174,18 @@ async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             # Пауза в секундах для всего блока уведомлений
             await asyncio.sleep(int(timer))
         except Exception as e:
-            # Обработка ошибок (можно записать лог, отправить уведомление и т.д.)
-            # Можно вывести информацию об ошибке
-            #logger.error(f"Произошла ошибка: {e}")
-            # Продолжаем цикл, не прерывая выполнение программы
+            logger.error(f"Возникла ошибка: {e} функция alert_loop")
             continue
+#_______________________________________________________________________________________________________________________
 
 #_______________________________________________________________________________________________________________________
-#                               Функции которые вызываются через кнопки главного меню
-async def start_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-        Функция включает уведомления
-        :param update: Объект Update, содержащий информацию о текущем обновлении.
-        :param context: Объект Context, содержащий информацию о текущем контексте.
-        :return:
-    """
-    # Проверяем, запущены ли уже оповещения
-    if 'ALERT_TASK' in context.chat_data and context.chat_data['ALERT_TASK'] is not None:
-        await update.effective_chat.send_message('Оповещения уже запущены')
-        return
-    # Сообщаем пользователю
-    await update.message.reply_text("Вы включили оповещения!")
-    # Запускаем цикл оповещений
-    context.chat_data['ALERT_TASK'] = asyncio.create_task(alerts_loop(update, context))
-async def stop_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-        Функция выключает уведомления
-        :param update: Объект Update, содержащий информацию о текущем обновлении.
-        :param context: Объект Context, содержащий информацию о текущем контексте.
-        :return:
-    """
-    # Проверяем, остановлены ли уже оповещения
-    if 'ALERT_TASK' not in context.chat_data or context.chat_data['ALERT_TASK'] is None:
-        await update.effective_chat.send_message('Оповещения уже остановлены')
-        return
-    # Сообщаем пользователю
-    await update.effective_chat.send_message("Оповещения отключены!")
-    # Останавливаем цикл оповещений
-    context.chat_data['ALERT_TASK'].cancel()
-    context.chat_data['ALERT_TASK'] = None
-async def request_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.effective_chat.send_message('Функция в разработке, не спешите.')
-    pass
-#_______________________________________________________________________________________________________________________
-#_______________________________________________________________________________________________________________________
 #                               Функции которые вызываются через кнопки меню настроек
+async def request_quotes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    try:
+        await update.effective_chat.send_message('Функция в разработке, не спешите.')
+    except Exception as e:
+        logger.error(f"Возникла ошибка: {e} функция request_quotes")
+
 async def input_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Функция проверяет текст введеный пользователем для установки таймера
@@ -154,28 +193,31 @@ async def input_timer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         :param context: Объект Context, содержащий информацию о текущем контексте.
         :return:
     """
-    # Получаем ID пользователя
-    user = update.effective_user.id
-    # Получаем ответ пользователя
-    text = update.message.text
-    if text.isdigit():
-        number = int(text)
-        # Проверяем диапозон от 30сек - 24 часов
-        if 30 <= number <= 24 * 60 * 60:
-            context.chat_data['TIMER_ALERT'] = number
-            await update.message.reply_text(f'Таймер установлен на {number} секунд'
-                                            f'\nНе забудьте Отключить и Включить уведомления заново!!!',
-                                            reply_markup=UiBot.keyboard_setting_menu(update, context))
-            return SETTING_STATE
+    try:
+        # Получаем ID пользователя
+        user = update.effective_user.id
+        # Получаем ответ пользователя
+        text = update.message.text
+        if text.isdigit():
+            number = int(text)
+            # Проверяем диапозон от 30сек - 24 часов
+            if 30 <= number <= 24 * 60 * 60:
+                context.chat_data['TIMER_ALERT'] = number
+                await update.message.reply_text(f'Таймер установлен на {number} секунд'
+                                                f'\nНе забудьте Отключить и Включить уведомления заново!!!',
+                                                reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            else:
+                await update.message.reply_text(f'Не возможно установить таймер на {number} секунд\n'
+                                                f'Правильный диапозон от 30 секунд до 24 часов!!!',
+                                                reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
         else:
-            await update.message.reply_text(f'Не возможно установить таймер на {number} секунд\n'
-                                            f'Правильный диапозон от 30 секунд до 24 часов!!!',
+            await update.message.reply_text(f'Число должно быть целым и без лишних знаков\nВведите целое число!!!',
                                             reply_markup=UiBot.keyboard_setting_menu(update, context))
             return SETTING_STATE
-    else:
-        await update.message.reply_text(f'Число должно быть целым и без лишних знаков\nВведите целое число!!!',
-                                        reply_markup=UiBot.keyboard_setting_menu(update, context))
-        return SETTING_STATE
+    except Exception as e:
+        logger.error(f"Возникла ошибка: {e} функция input_timer")
 async def input_spred(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Функция проверяет текст введенный пользователем для установки спреда в формате (float float)-число пробел число
@@ -183,24 +225,24 @@ async def input_spred(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         :param context: Объект Context, содержащий информацию о текущем контексте.
         :return:
     """
-    # Получаем ID пользователя
-    user = update.effective_user.id
-    # Получаем ответ пользователя
-    text = update.message.text
-    # Разделяем ввод пользователя на две части по пробелу
-    numbers = text.split()
-    if len(numbers) == 2:
-        try:
+    try:
+        # Получаем ID пользователя
+        user = update.effective_user.id
+        # Получаем ответ пользователя
+        text = update.message.text
+        # Разделяем ввод пользователя на две части по пробелу
+        numbers = text.split()
+        if len(numbers) == 2:
             # Преобразуем числа из строкового формата в числа с плавающей запятой
             min = float(numbers[0])
             max = float(numbers[1])
             # Проверяем, находятся ли числа в указанном диапазоне от 0.1 до 100 и чтобы второе число было больше первого
             if 0.1 <= min <= 100 and 0.1 <= max <= 100 and max > min:
                 context.chat_data.get('DH_Class').set_min_max_spred(min, max)
-                await update.message.reply_text(f'Спред изменен на диапозон от{min} до {max}',
+                await update.message.reply_text(f'Спред изменен на диапозон от {min} до {max}',
                                                 reply_markup=UiBot.keyboard_setting_menu(update, context))
                 return SETTING_STATE
-        except Exception as e:
-            print("!!! ERROR - input_spred")
+    except Exception as e:
+        logger.error(f"Возникла ошибка: {e} функция input_timer")
 
 #_______________________________________________________________________________________________________________________

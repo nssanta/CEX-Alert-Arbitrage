@@ -32,6 +32,13 @@ class ListCoins:
             # # Переменая при иницилизации запускает функцию
             self.data = {}
             #asyncio.run(self._initialize_data())
+    def disable_stream_handler(self):
+        '''
+            Метод выключает логинг в консоль
+        '''
+        for handler in self.logger.handlers:
+            if isinstance(handler, logging.StreamHandler):
+                self.logger.removeHandler(handler)
 
     async def initialize_data(self):
         """
@@ -43,13 +50,6 @@ class ListCoins:
         except Exception as e:
             # В случае ошибки логируем исключение
             self.logger.error(f"Ошибка при инициализации данных: {e}")
-    def disable_stream_handler(self):
-        '''
-            Метод выключает логинг в консоль
-        '''
-        for handler in self.logger.handlers:
-            if isinstance(handler, logging.StreamHandler):
-                self.logger.removeHandler(handler)
     async def get_coinw_data(self):
         """
         Асинхронная функция для получения информации о монетах с API Coinw.
