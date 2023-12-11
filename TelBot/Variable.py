@@ -8,6 +8,7 @@ from telegram.ext import ContextTypes
 from Core.DataHandler import DataHandler
 from exchange.BybitApi import BybitApi
 from exchange.CoinWApi import CoinWApi
+from exchange.MexcApi import MexcApi
 from exchange.OkxApi import OkxApi
 
 #   ЛОГИРОВАНИЕ В ФАЙЛ И КОНСОЛЬ!
@@ -84,11 +85,13 @@ async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYP
         context.chat_data.setdefault('Okx', OkxApi("Okx"))
         context.chat_data.setdefault('Bybit', BybitApi("Bybit"))
         context.chat_data.setdefault('Coin W', CoinWApi("Coin W"))
+        context.chat_data.setdefault('Mexc', MexcApi("Mexc"))
 
         context.chat_data.setdefault('EXCHANGE_LIST', [
             context.chat_data.get('Okx'),
             context.chat_data.get('Bybit'),
             context.chat_data.get('Coin W'),
+            context.chat_data.get('Mexc'),
 
         ])
     except Exception as e:

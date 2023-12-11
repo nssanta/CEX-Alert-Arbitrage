@@ -38,6 +38,13 @@ class BaseApi(ABC):
             if isinstance(handler, logging.StreamHandler):
                 self.logger.removeHandler(handler)
     @abstractmethod
+    async def get_one_coin(self,coin_pair):
+        """
+            Метод для получения данных одной монетной пары.
+            :return:
+        """
+        pass
+    @abstractmethod
     async def get_full_info(self):
         """
             Метод для получения данных с Api

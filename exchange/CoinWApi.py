@@ -185,7 +185,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = CoinWApi("Coin")
-        per = await okx.get_one_coin("btc_usdt")
+        per = await okx.get_one_coin("cwt_cnyt")
         print(per)
         print()
         print(f'Всего {len(per)}')

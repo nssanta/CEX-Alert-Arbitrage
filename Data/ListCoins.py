@@ -50,6 +50,54 @@ class ListCoins:
         except Exception as e:
             # В случае ошибки логируем исключение
             self.logger.error(f"Ошибка при инициализации данных: {e}")
+    async def get_mexc_data(self):
+        """
+                    Асинхронная функция для получения информации с API.
+                    :return: Результат запроса или None в случае ошибки.
+                """
+        # URL API, с которого мы будем получать данные
+        # endpoint = "/api/v3/exchangeInfo?permissions=SPOT"
+        endpoint = '/open/api/v2/market/ticker'
+        url = "https://www.mexc.com" + endpoint
+        # Список для хранения тикеров
+        tickers = []
+        coins_dict = {}
+        # Цикл продолжается, пока есть URL для запроса (ответ не в одной странице)
+        async with httpx.AsyncClient() as client:
+            while url:
+                try:
+                    # Выполняем GET-запрос к URL
+                    response = await client.get(url)
+                    # Проверяем статус ответа
+                    if response.status_code == 200:
+                        # Если статус ответа 200, преобразуем ответ в JSON
+                        data = response.json()
+                        # Проверяем код ответа в данных
+                        if data["code"] == 200:
+                            # Если код ответа 0, добавляем список тикеров в наш список
+                           # tickers.extend(data["data"])
+                            for item in data['data']:
+                                coin1, coin2 = item['symbol'].split('_')
+                                coins_dict[coin1 + coin2] = {
+                                    "coin1": coin1,
+                                    "coin2": coin2
+                                }
+                            # Проверяем, есть ли URL следующей страницы в данных
+                            url = None  # В данном API нет пагинации, поэтому мы устанавливаем url в None
+                        else:
+                            # Если код ответа не 0, выводим сообщение об ошибке и прерываем цикл
+                            self.logger.error("Ошибка при получении данных")
+                            break
+                    else:
+                        # Если статус ответа не 200, выводим сообщение об ошибке и прерываем цикл
+                        self.logger.error("Ошибка при выполнении запроса")
+                        break
+                except Exception as e:
+                    # Если возникает исключение, логируем ошибку и прерываем цикл
+                    self.logger.error(f"Возникла ошибка: {e}")
+                    break
+        # Возвращаем список тикеров
+        return coins_dict
     async def get_coinw_data(self):
         """
         Асинхронная функция для получения информации о монетах с API Coinw.
@@ -72,7 +120,7 @@ class ListCoins:
 
                     # Проверяем код ответа в данных
                     if data["code"] == "200":
-                        # Обрабатываем данные о парамах монет
+                        # Обрабатываем данные о парах монет
                         for pair_name, pair_data in data["data"].items():
                             coin1, coin2 = pair_name.split('_')
                             coins_dict[coin1 + coin2] = {
@@ -143,11 +191,11 @@ class ListCoins:
         """
         try:
             # Вызываем асинхронные методы для получения данных
-            coinw_data, okx_data = await asyncio.gather(self.get_coinw_data(), self.get_okx_data())
+            mexc_data, okx_data = await asyncio.gather(self.get_mexc_data(), self.get_okx_data())
 
             # Объединяем данные в один общий словарь, учитывая только уникальные ключи
             combined_data = {}
-            combined_data.update(coinw_data)
+            combined_data.update(mexc_data)
             for k, v in okx_data.items():
                 if k not in combined_data:
                     combined_data[k] = v
@@ -183,6 +231,7 @@ if __name__ == "__main__":
 
     # Пример использования
     your_class = ListCoins()
+
     # okx = asyncio.run(your_class.get_okx_data())
     # coinw = asyncio.run(your_class.get_coinw_data())
     #
@@ -195,5 +244,11 @@ if __name__ == "__main__":
     asyncio.run(your_class.initialize_data())
     #aga = asyncio.run(your_class.get_first_coin("BTCUSDT"))
     #print(f'aga {aga}')
+
+    # aa = asyncio.run(your_class.get_mexc_data())
+    # print(aa)
+
     lol = asyncio.run(your_class._merge_data())
     print(lol)
+    print()
+    print(len(lol))

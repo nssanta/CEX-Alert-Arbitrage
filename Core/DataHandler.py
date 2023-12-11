@@ -5,6 +5,7 @@ import traceback
 
 import TelBot.CallHandler
 from Data.ListCoins import ListCoins
+from exchange.MexcApi import MexcApi
 from exchange.BybitApi import BybitApi
 from exchange.CoinWApi import CoinWApi
 from exchange.OkxApi import OkxApi
@@ -34,6 +35,8 @@ class DataHandler:
         :param apis: список бирж
         :return: список общих монетных пар и словарь с данными с котировками и объемом
         """
+        #start_time = time.time()
+
         # Создаем список задач для каждого API, чтобы получить данные асинхронно
         tasks = [api.get_coins_price_vol() for api in apis]
         # Запускаем все задачи асинхронно и ждем их завершения
@@ -45,7 +48,8 @@ class DataHandler:
         # Находим общие пары, которые есть в каждом словаре
         # Это те пары, количество которых равно количеству API
         common_pairs = [pair for pair, count in pair_counts.items() if count == len(apis)]
-
+        #end_time = time.time()
+        #print(f'Функция get_common_pairs_and_data отработала за {end_time - start_time}')
         return common_pairs, all_data
     async def get_exchange_data(self, data1, data2, api1, api2):
         """
@@ -56,6 +60,7 @@ class DataHandler:
             :param api2: Имя второй биржи
             :return: Вернет словарь с данными, где будет добавлен ключ с разницой в процентах
         """
+        #start_time = time.time()
         # Создаем словарь для хранения результата
         result = {}
         # Обходим все пары в данных
@@ -84,6 +89,8 @@ class DataHandler:
                             },
                             'dif': round(dif, 4)
                         }
+        #end_time = time.time()
+        #print(f'Функция get_exchange_data отработала за {end_time - start_time}')
         return result
     async def get_all_exchange_data(self, apis):
         """
@@ -91,6 +98,7 @@ class DataHandler:
         :param apis: список бирж
         :return: словарь с данными и отношением и разницой.
         """
+        start_time = time.time()
         # Получаем общий список монетных пар и данные от всех API
         common_pairs, all_data = await self.get_common_pairs_and_data(apis)
         # Создаем словарь для хранения результатов
@@ -109,53 +117,121 @@ class DataHandler:
                 if pair_name not in results:
                     results[pair_name] = {}
                 results[pair_name].update(result)
-
+        #end_time = time.time()
+        #print(f'Функция get_all_exchange_data отработала за {end_time - start_time}')
         return results
-    async def get_best_ticker(self, apis):
-        """
-            Функция добавляет в словарь с Биржами-монетами-... , сеть и коммисию за операцию
-            :param apis: список Бирж
-            :return: словарь который содержит полную информацию
-        """
-        # Запрашиваем все данные
-        all_exchange_data = await self.get_all_exchange_data(apis)
-        # Обходим все пары API
-        for pair_name, pairs in all_exchange_data.items():
-            # Обходим все монеты в парах
-            for coin, data in pairs.items():
-                # Создаем список задач для каждого API
-                tasks = []
-                # Добавляем список для отслеживания порядка API
-                api_order = []
-                # Обходим все API
-                for api in apis:
-                    # Если имя API есть в данных монеты
-                    if api.name in data['data']:
-                        onecoin = await self.ListCoins.get_first_coin(coin)
-                        # Создаем задачу для получения комиссии сети для этой монеты
-                        task = asyncio.create_task(api.get_network_commission(onecoin))
-                        tasks.append(task)
-                        # Добавляем имя API в список
-                        api_order.append(api.name)
-                # Запускаем все задачи асинхронно и ждем их завершения
-                network_commissions = await asyncio.gather(*tasks)
 
-                # Добавляем комиссию сети в данные монеты
-                for i, api_name in enumerate(api_order):
-                    # Используем api_name из списка api_order
-                    if api_name in data['data'] and i < len(network_commissions):
-                        data['data'][api_name]['network'] = network_commissions[i]
-        return all_exchange_data
+    # Мой Вариант
+    # async def get_best_ticker1(self, apis):
+    #     """
+    #         Функция добавляет в словарь с Биржами-монетами-... , сеть и коммисию за операцию
+    #         :param apis: список Бирж
+    #         :return: словарь который содержит полную информацию
+    #     """
+    #     start_time = time.time()
+    #     # Запрашиваем все данные
+    #     all_exchange_data = await self.get_all_exchange_data(apis)
+    #     # Обходим все пары API
+    #     for pair_name, pairs in all_exchange_data.items():
+    #         # Обходим все монеты в парах
+    #         for coin, data in pairs.items():
+    #             # Создаем список задач для каждого API
+    #             tasks = []
+    #             # Добавляем список для отслеживания порядка API
+    #             api_order = []
+    #             # Обходим все API
+    #             for api in apis:
+    #                 # Если имя API есть в данных монеты
+    #                 if api.name in data['data']:
+    #                     onecoin = await self.ListCoins.get_first_coin(coin)
+    #                     # Создаем задачу для получения комиссии сети для этой монеты
+    #                     task = asyncio.create_task(api.get_network_commission(onecoin))
+    #                     tasks.append(task)
+    #                     # Добавляем имя API в список
+    #                     api_order.append(api.name)
+    #             # Запускаем все задачи асинхронно и ждем их завершения
+    #             network_commissions = await asyncio.gather(*tasks)
+    #
+    #             # Добавляем комиссию сети в данные монеты
+    #             for i, api_name in enumerate(api_order):
+    #                 # Используем api_name из списка api_order
+    #                 if api_name in data['data'] and i < len(network_commissions):
+    #                     data['data'][api_name]['network'] = network_commissions[i]
+    #     end_time = time.time()
+    #     print(f'Функция get_best_ticker1 отработала за {end_time - start_time}')
+    #     return all_exchange_data
+    #
+    # #Вариант от Старика
+    # async def get_best_ticker2(self, apis):
+    #     start_time = time.time()
+    #     all_exchange_data = await self.get_all_exchange_data(apis)
+    #     tasks = []
+    #
+    #     for pair_name, pairs in all_exchange_data.items():
+    #         for coin, data in pairs.items():
+    #             tasks_per_coin = []
+    #             api_order = []
+    #
+    #             for api in apis:
+    #                 if api.name in data['data']:
+    #                     onecoin = await self.ListCoins.get_first_coin(coin)
+    #                     task = asyncio.create_task(api.get_network_commission(onecoin))
+    #                     tasks_per_coin.append(task)
+    #                     api_order.append(api.name)
+    #
+    #             if tasks_per_coin:
+    #                 network_commissions = await asyncio.gather(*tasks_per_coin)
+    #
+    #                 for i, api_name in enumerate(api_order):
+    #                     if api_name in data['data'] and i < len(network_commissions):
+    #                         data['data'][api_name]['network'] = network_commissions[i]
+    #
+    #     end_time = time.time()
+    #     print(f'Функция get_best_ticker2 отработала за {end_time - start_time}')
+    #     return all_exchange_data
+
+    #Вариант от новичка.
+    async def get_best_ticker(self, apis):
+        #start_time = time.time()
+        try:
+            # Получаем данные с бирж
+            all_exchange_data = await self.get_all_exchange_data(apis)
+            # Обходим данные каждой биржи и их монет
+            for pair_name, pairs in all_exchange_data.items():
+                for coin, data in pairs.items():
+                    tasks = {}
+                    for api in apis:
+                        # Проверяем, есть ли имя биржи в данных монеты
+                        if api.name in data['data']:
+                            # Создаем задачу для получения комиссии сети для этой монеты
+                            coin_info = await self.ListCoins.get_first_coin(coin)
+                            task = asyncio.create_task(api.get_network_commission(coin_info))
+                            tasks[api.name] = task
+                    # Собираем результаты асинхронных задач
+                    network_commissions = await asyncio.gather(*tasks.values())
+                    # Добавляем комиссию сети в данные монеты
+                    for i, api_name in enumerate(tasks.keys()):
+                        if api_name in data['data']:
+                            data['data'][api_name]['network'] = network_commissions[i]
+           # end_time = time.time()
+           # print(f'Функция get_best_ticker отработала за {end_time - start_time}')
+            return all_exchange_data
+        except Exception as e:
+            # Обработка исключений
+            print(f'Произошла ошибка: {e}')
+            return None  # Можно выбрасывать исключение или возвращать информацию об ошибке
 
     async def get_coin_all_exchange(self, ex_list, coin_pair):
         try:
             # Разделяем монетную пару
             onecoin = await self.ListCoins.get_first_coin(coin_pair.upper())
             twocoin = coin_pair[len(onecoin):].upper()#coin_pair.upper().split(onecoin)[1]
+            print(onecoin,twocoin)
             # Формируем переменных с монетными парами для каждой биржи
             coinw_pair = f"{onecoin}_{twocoin}".lower()
             bybit_pair = coin_pair.upper()
             okx_pair = f"{onecoin}-{twocoin}".upper()
+            mexc_pair = f"{onecoin}_{twocoin}".lower()
             # Список задач.
             tasks = []
             # Проходим по списку бирж и проверяем на основе имени.
@@ -168,6 +244,9 @@ class DataHandler:
                     tasks.append(task)
                 elif "Coin W" in exchang.name:
                     task = asyncio.create_task(exchang.get_one_coin(coinw_pair))
+                    tasks.append(task)
+                elif "Mexc" in exchang.name:
+                    task = asyncio.create_task(exchang.get_one_coin(mexc_pair))
                     tasks.append(task)
             # Запускаем все запросы одновременно
             results = await asyncio.gather(*tasks)
@@ -217,6 +296,7 @@ if __name__ == "__main__":
         okx = OkxApi("Okx")
         bybit = BybitApi("Bybit")
         coinw = CoinWApi("Coin W")
+        mexc = MexcApi("Mexc")
 
         # #  дубли для теста
         # okx2 = OkxApi("Okx2")
@@ -226,24 +306,37 @@ if __name__ == "__main__":
         ex_list = []
         ex_list.append(okx)
         ex_list.append(bybit)
-        ex_list.append(coinw)
 
-        # #  дубли для теста
-        # ex_list.append(okx2)
-        # ex_list.append(bybit2)
-        # ex_list.append(coinw2)
+
 
         DH = DataHandler("DH")
         await DH.ListCoins.initialize_data()
 
-        #Добавляем данные о комиссии
-        all_exchange_data2 = await DH.get_coin_all_exchange(ex_list, "BTCUSDT")
-        olol = await TelBot.CallHandler.format_data_for_coin_pair(all_exchange_data2)
-        print(olol)
-        # print(f'Все данные  : {all_exchange_data2}')
-        # print(f'Все уникальные данные  : {len(all_exchange_data2)}')
+        # print("********** Тест на 2 биржах")
+        # test1 = await DH.get_best_ticker(ex_list)
+        #
+        ex_list.append(coinw)
+
+        # print("********** Тест на 3 биржах")
+        # test2 = await DH.get_best_ticker(ex_list)
+
+        ex_list.append(mexc)
+
+        print("********** Тест на 4 биржах")
+        test3 = await DH.get_best_ticker(ex_list)
+        #newtest = await DH.get_best_ticker_for_all_pairs(ex_list)
 
     asyncio.run(main())
 
     end_time = time.time()
     print(f'Код отработал за {end_time - start_time}')
+
+    # Добавляем данные о комиссии
+    #  all_exchange_data2 = await DH.get_best_ticker(ex_list)
+    #  # all_exchange_data2 = await DH.get_coin_all_exchange(ex_list, "BTCUSDT")
+    #  # olol = await TelBot.CallHandler.format_data_for_coin_pair(all_exchange_data2)
+    #  # print(olol)
+    # # print(f'Все данные  : {all_exchange_data2}')
+    # # print(f'Все уникальные данные  : {len(all_exchange_data2)}')
+    #  for key, value in all_exchange_data2.items():
+    #      print(key, value)
