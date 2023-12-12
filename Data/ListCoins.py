@@ -1,3 +1,5 @@
+import time
+
 import httpx
 import logging
 import asyncio
@@ -50,11 +52,89 @@ class ListCoins:
         except Exception as e:
             # В случае ошибки логируем исключение
             self.logger.error(f"Ошибка при инициализации данных: {e}")
+    # async def get_coinw_data(self):
+    #     """
+    #     Асинхронная функция для получения информации о монетах с API Coinw.
+    #     :return: Словарь с данными о монетах или пустой словарь в случае ошибки.
+    #     """
+    #     url = "https://api.coinw.com/api/v1/public?command=returnTicker"
+    #
+    #     # Словарь для хранения данных о монетах
+    #     coins_dict = {}
+    #
+    #     async with httpx.AsyncClient() as client:
+    #         try:
+    #             # Выполняем GET-запрос к URL
+    #             response = await client.get(url)
+    #
+    #             # Проверяем статус ответа
+    #             if response.status_code == 200:
+    #                 # Преобразуем ответ в JSON
+    #                 data = response.json()
+    #
+    #                 # Проверяем код ответа в данных
+    #                 if data["code"] == "200":
+    #                     # Обрабатываем данные о парах монет
+    #                     for pair_name, pair_data in data["data"].items():
+    #                         coin1, coin2 = pair_name.split('_')
+    #                         coins_dict[coin1 + coin2] = {
+    #                             "coin1": coin1,
+    #                             "coin2": coin2
+    #                         }
+    #                 else:
+    #                     # Если код ответа не 200, логируем ошибку
+    #                     self.logger.error("Ошибка при получении данных")
+    #             else:
+    #                 # Если статус ответа не 200, логируем ошибку
+    #                 self.logger.error("Ошибка при выполнении запроса")
+    #
+    #         except Exception as e:
+    #             # Логируем возникшее исключение
+    #             self.logger.error(f"Возникла ошибка в get_coinw_data: {e}")
+    #
+    #     # Возвращаем словарь с данными о монетах
+    #     return coins_dict
+    async def get_gateio_data(self):
+        """
+            Асинхронная функция для получения информации с API.
+            :return: Результат запроса или None в случае ошибки.
+        """
+        # Эндпоинт куда отправлять запрос
+        url = 'https://api.gateio.ws/api/v4/spot/currency_pairs'
+        # Заголовок необходим для запроса
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        # Словаря для списка монет
+        coins_dict = {}
+        # Цикл продолжается, пока есть URL для запроса (ответ не в одной странице)
+        async with httpx.AsyncClient() as client:
+            try:
+                # Выполняем GET-запрос к URL
+                response = await client.get(url, headers=headers)
+                # Проверяем статус ответа
+                if response.status_code == 200:
+                    # Если статус ответа 200, преобразуем ответ в JSON
+                    data = response.json()
+                    for item in data:
+                        coin1, coin2 = item['id'].split("_")
+                        name = (coin1+coin2)#.lower()
+                        coins_dict[name] = {
+                            "coin1": coin1,
+                            "coin2": coin2,
+
+                        }
+                    return coins_dict
+                else:
+                    # Если статус ответа не 200, выводим сообщение об ошибке и прерываем цикл
+                    self.logger.error("Ошибка при выполнении запроса")
+                    return {}
+            except Exception as e:
+                # Если возникает исключение, логируем ошибку и прерываем цикл
+                self.logger.error(f"Возникла ошибка в функции get_gateio_data: {e}")
     async def get_mexc_data(self):
         """
-                    Асинхронная функция для получения информации с API.
-                    :return: Результат запроса или None в случае ошибки.
-                """
+            Асинхронная функция для получения информации с API.
+            :return: Результат запроса или None в случае ошибки.
+        """
         # URL API, с которого мы будем получать данные
         # endpoint = "/api/v3/exchangeInfo?permissions=SPOT"
         endpoint = '/open/api/v2/market/ticker'
@@ -97,48 +177,6 @@ class ListCoins:
                     self.logger.error(f"Возникла ошибка: {e}")
                     break
         # Возвращаем список тикеров
-        return coins_dict
-    async def get_coinw_data(self):
-        """
-        Асинхронная функция для получения информации о монетах с API Coinw.
-        :return: Словарь с данными о монетах или пустой словарь в случае ошибки.
-        """
-        url = "https://api.coinw.com/api/v1/public?command=returnTicker"
-
-        # Словарь для хранения данных о монетах
-        coins_dict = {}
-
-        async with httpx.AsyncClient() as client:
-            try:
-                # Выполняем GET-запрос к URL
-                response = await client.get(url)
-
-                # Проверяем статус ответа
-                if response.status_code == 200:
-                    # Преобразуем ответ в JSON
-                    data = response.json()
-
-                    # Проверяем код ответа в данных
-                    if data["code"] == "200":
-                        # Обрабатываем данные о парах монет
-                        for pair_name, pair_data in data["data"].items():
-                            coin1, coin2 = pair_name.split('_')
-                            coins_dict[coin1 + coin2] = {
-                                "coin1": coin1,
-                                "coin2": coin2
-                            }
-                    else:
-                        # Если код ответа не 200, логируем ошибку
-                        self.logger.error("Ошибка при получении данных")
-                else:
-                    # Если статус ответа не 200, логируем ошибку
-                    self.logger.error("Ошибка при выполнении запроса")
-
-            except Exception as e:
-                # Логируем возникшее исключение
-                self.logger.error(f"Возникла ошибка в get_coinw_data: {e}")
-
-        # Возвращаем словарь с данными о монетах
         return coins_dict
     async def get_okx_data(self):
         """
@@ -191,14 +229,17 @@ class ListCoins:
         """
         try:
             # Вызываем асинхронные методы для получения данных
-            mexc_data, okx_data = await asyncio.gather(self.get_mexc_data(), self.get_okx_data())
+            gateio_data, mexc_data, okx_data = await asyncio.gather(self.get_gateio_data(),self.get_mexc_data(),
+                                                                    self.get_okx_data())
 
             # Объединяем данные в один общий словарь, учитывая только уникальные ключи
             combined_data = {}
-            combined_data.update(mexc_data)
-            for k, v in okx_data.items():
-                if k not in combined_data:
-                    combined_data[k] = v
+            # combined_data.update(mexc_data)
+            # for k, v in okx_data.items():
+            #     if k not in combined_data:
+            #         combined_data[k] = v
+            for item in (gateio_data,mexc_data,okx_data):
+                combined_data.update(item)
 
             # Обработка объединенных данных, если нужно
 
@@ -228,27 +269,17 @@ class ListCoins:
 
 
 if __name__ == "__main__":
-
+    st = time.time()
     # Пример использования
     your_class = ListCoins()
-
-    # okx = asyncio.run(your_class.get_okx_data())
-    # coinw = asyncio.run(your_class.get_coinw_data())
-    #
-    # merg = asyncio.run(your_class.merge_data())
-    # print(merg)
-    # print("\n")
-    # print(len(okx))
-    # print(len(coinw))
-    # print(len(merg))
     asyncio.run(your_class.initialize_data())
-    #aga = asyncio.run(your_class.get_first_coin("BTCUSDT"))
-    #print(f'aga {aga}')
 
-    # aa = asyncio.run(your_class.get_mexc_data())
+    # aa = asyncio.run(your_class.get_gateio_data())
     # print(aa)
 
     lol = asyncio.run(your_class._merge_data())
     print(lol)
     print()
     print(len(lol))
+    et = time.time()
+    print(f'FINISH TIME = {et-st}')

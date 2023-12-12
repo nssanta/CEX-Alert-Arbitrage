@@ -218,7 +218,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         mexc = MexcApi("Mexc")
-        per = await mexc.get_network_commission("RACA")
+        per = await mexc.get_full_info()
         print(per)
         print()
         print(len(per))

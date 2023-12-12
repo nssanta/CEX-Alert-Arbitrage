@@ -31,7 +31,7 @@ class DataHandler:
         self.max_spred = max
     async def get_common_pairs_and_data(self, apis):
         """
-        Функция берет данные для всех монет котировку и объем
+        Функция берет данные для всех монет котировку и объем и находим общиее.
         :param apis: список бирж
         :return: список общих монетных пар и словарь с данными с котировками и объемом
         """
@@ -48,6 +48,7 @@ class DataHandler:
         # Находим общие пары, которые есть в каждом словаре
         # Это те пары, количество которых равно количеству API
         common_pairs = [pair for pair, count in pair_counts.items() if count == len(apis)]
+        print(f"ОБЩИХ ПАР!!! = {len(common_pairs)}")
         #end_time = time.time()
         #print(f'Функция get_common_pairs_and_data отработала за {end_time - start_time}')
         return common_pairs, all_data
@@ -121,6 +122,36 @@ class DataHandler:
         #print(f'Функция get_all_exchange_data отработала за {end_time - start_time}')
         return results
 
+    async def get_best_ticker(self, apis):
+        #start_time = time.time()
+        try:
+            # Получаем данные с бирж
+            all_exchange_data = await self.get_all_exchange_data(apis)
+            # Обходим данные каждой биржи и их монет
+            for pair_name, pairs in all_exchange_data.items():
+                for coin, data in pairs.items():
+                    tasks = {}
+                    for api in apis:
+                        # Проверяем, есть ли имя биржи в данных монеты
+                        if api.name in data['data']:
+                            # Создаем задачу для получения комиссии сети для этой монеты
+                            coin_info = await self.ListCoins.get_first_coin(coin)
+                            task = asyncio.create_task(api.get_network_commission(coin_info))
+                            tasks[api.name] = task
+                    # Собираем результаты асинхронных задач
+                    network_commissions = await asyncio.gather(*tasks.values())
+                    # Добавляем комиссию сети в данные монеты
+                    for i, api_name in enumerate(tasks.keys()):
+                        if api_name in data['data']:
+                            data['data'][api_name]['network'] = network_commissions[i]
+           # end_time = time.time()
+           # print(f'Функция get_best_ticker отработала за {end_time - start_time}')
+            return all_exchange_data
+        except Exception as e:
+            # Обработка исключений
+            print(f'Произошла ошибка: {e}')
+            return None  # Можно выбрасывать исключение или возвращать информацию об ошибке
+
     # Мой Вариант
     # async def get_best_ticker1(self, apis):
     #     """
@@ -189,37 +220,6 @@ class DataHandler:
     #     end_time = time.time()
     #     print(f'Функция get_best_ticker2 отработала за {end_time - start_time}')
     #     return all_exchange_data
-
-    #Вариант от новичка.
-    async def get_best_ticker(self, apis):
-        #start_time = time.time()
-        try:
-            # Получаем данные с бирж
-            all_exchange_data = await self.get_all_exchange_data(apis)
-            # Обходим данные каждой биржи и их монет
-            for pair_name, pairs in all_exchange_data.items():
-                for coin, data in pairs.items():
-                    tasks = {}
-                    for api in apis:
-                        # Проверяем, есть ли имя биржи в данных монеты
-                        if api.name in data['data']:
-                            # Создаем задачу для получения комиссии сети для этой монеты
-                            coin_info = await self.ListCoins.get_first_coin(coin)
-                            task = asyncio.create_task(api.get_network_commission(coin_info))
-                            tasks[api.name] = task
-                    # Собираем результаты асинхронных задач
-                    network_commissions = await asyncio.gather(*tasks.values())
-                    # Добавляем комиссию сети в данные монеты
-                    for i, api_name in enumerate(tasks.keys()):
-                        if api_name in data['data']:
-                            data['data'][api_name]['network'] = network_commissions[i]
-           # end_time = time.time()
-           # print(f'Функция get_best_ticker отработала за {end_time - start_time}')
-            return all_exchange_data
-        except Exception as e:
-            # Обработка исключений
-            print(f'Произошла ошибка: {e}')
-            return None  # Можно выбрасывать исключение или возвращать информацию об ошибке
 
     async def get_coin_all_exchange(self, ex_list, coin_pair):
         try:
@@ -315,14 +315,14 @@ if __name__ == "__main__":
         # print("********** Тест на 2 биржах")
         # test1 = await DH.get_best_ticker(ex_list)
         #
-        ex_list.append(coinw)
+        #ex_list.append(coinw)
 
         # print("********** Тест на 3 биржах")
         # test2 = await DH.get_best_ticker(ex_list)
 
         ex_list.append(mexc)
 
-        print("********** Тест на 4 биржах")
+        print(f"********** Тест на 4 биржах spred = {DH.min_spred} - {DH.max_spred}")
         test3 = await DH.get_best_ticker(ex_list)
         #newtest = await DH.get_best_ticker_for_all_pairs(ex_list)
 
