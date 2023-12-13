@@ -27,11 +27,11 @@ class GateApi(BaseApi):
             :return: Результат запроса или None в случае ошибки.
         """
         # Эндпоинт куда отправлять запрос
-        endpoint = '/api/v4/spot/currency_pairs'
+        endpoint = '/api/v4/spot/tickers'
         url = self.domain+endpoint
         # Заголовок необходим для запроса
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        # Цикл продолжается, пока есть URL для запроса (ответ не в одной странице)
+        # Создаем клиент для асинхроного запроса
         async with httpx.AsyncClient() as client:
             try:
                 # Выполняем GET-запрос к URL
@@ -49,11 +49,44 @@ class GateApi(BaseApi):
                 # Если возникает исключение, логируем ошибку и прерываем цикл
                 self.logger.error(f"Возникла ошибка: {e}")
 
-    async def get_one_coin(self,coin_pair):
+    async def get_one_coin(self, coin_pair):
+        """
+            Асинхронная функция для получения информации о котировках и объеме торгов для указанной монетной пары.
+            :param coin_pair: Монетная пара, например, "BTC-USD".
+            :return: Словарь с информацией или None в случае ошибки.
+        """
+        # Эндпоинт куда отправлять запрос
+        endpoint = f'/api/v4/spot/tickers?currency_pair={coin_pair}'
+        url = self.domain + endpoint
+        # Словарь с информацией о котировках и объеме
+        processed_info = {}
+        # Создаем клиент для асинхронного запроса
+        async with httpx.AsyncClient() as client:
+            try:
+                # Выполняем GET-запрос к URL
+                response = await client.get(url)
+                # Проверяем статус ответа
+                if response.status_code == 200:
+                    # Если статус ответа 200, преобразуем ответ в JSON
+                    data = response.json()
+
+                    pair = coin_pair.lower().replace('_', '')
+                    result_vol = round(float(data[0]["base_volume"]), 2)
+
+                    processed_info[pair] = {
+                        "coin": coin_pair,
+                        "price": data[0]["last"],
+                        "vol24": str(result_vol)
+                    }
+                    return processed_info
+                else:
+                    self.logger.error(f"Ошибка при выполнении запроса: {response.status_code}")
+                    return {}
+            except Exception as e:
+                self.logger.error(f"Возникла ошибка: {e}")
+    async def get_coins_price_vol(self):
         pass
     async def get_network_commission(self,ccy):
-        pass
-    async def get_coins_price_vol(self):
         pass
 
 
@@ -64,7 +97,7 @@ class GateApi(BaseApi):
 if __name__ == "__main__":
     async def main():
         ga = GateApi("Gate.io")
-        full = await ga.get_full_info()
+        full = await ga.get_one_coin('TON_USDT')
         print(full)
         print(len(full))
 

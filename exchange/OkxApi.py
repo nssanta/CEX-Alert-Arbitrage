@@ -67,7 +67,6 @@ class OkxApi(BaseApi):
         except Exception as e:
             self.logger.error(f"Ошибка запроса: {e}")
         return None
-
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.
