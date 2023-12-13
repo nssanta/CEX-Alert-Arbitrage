@@ -5,6 +5,7 @@ import traceback
 
 import TelBot.CallHandler
 from Data.ListCoins import ListCoins
+from exchange.GateApi import GateApi
 from exchange.MexcApi import MexcApi
 from exchange.BybitApi import BybitApi
 from exchange.CoinWApi import CoinWApi
@@ -29,29 +30,29 @@ class DataHandler:
         """
         self.min_spred = min
         self.max_spred = max
-    async def get_common_pairs_and_data(self, apis):
-        """
-        Функция берет данные для всех монет котировку и объем и находим общиее.
-        :param apis: список бирж
-        :return: список общих монетных пар и словарь с данными с котировками и объемом
-        """
-        #start_time = time.time()
+    # async def get_common_pairs_and_data(self, apis):
+    #     """
+    #     Функция берет данные для всех монет котировку и объем и находим общиее.
+    #     :param apis: список бирж
+    #     :return: список общих монетных пар и словарь с данными с котировками и объемом
+    #     """
+    #     #start_time = time.time()
+    #
+    #     # Создаем список задач для каждого API, чтобы получить данные асинхронно
+    #     tasks = [api.get_coins_price_vol() for api in apis]
+    #     # Запускаем все задачи асинхронно и ждем их завершения
+    #     all_data = await asyncio.gather(*tasks)
+    #     # Получаем список всех пар из всех словарей
+    #     all_pairs = [pair for data in all_data for pair in data.keys()]
+    #     # Считаем количество каждой пары
+    #     pair_counts = Counter(all_pairs)
+    #     # Находим общие пары, которые есть в каждом словаре
+    #     # Это те пары, количество которых равно количеству API
+    #     common_pairs = [pair for pair, count in pair_counts.items() if count == len(apis)]
+    #     #end_time = time.time()
+    #     #print(f'Функция get_common_pairs_and_data отработала за {end_time - start_time}')
+    #     return common_pairs, all_data
 
-        # Создаем список задач для каждого API, чтобы получить данные асинхронно
-        tasks = [api.get_coins_price_vol() for api in apis]
-        # Запускаем все задачи асинхронно и ждем их завершения
-        all_data = await asyncio.gather(*tasks)
-        # Получаем список всех пар из всех словарей
-        all_pairs = [pair for data in all_data for pair in data.keys()]
-        # Считаем количество каждой пары
-        pair_counts = Counter(all_pairs)
-        # Находим общие пары, которые есть в каждом словаре
-        # Это те пары, количество которых равно количеству API
-        common_pairs = [pair for pair, count in pair_counts.items() if count == len(apis)]
-        print(f"ОБЩИХ ПАР!!! = {len(common_pairs)}")
-        #end_time = time.time()
-        #print(f'Функция get_common_pairs_and_data отработала за {end_time - start_time}')
-        return common_pairs, all_data
     async def get_exchange_data(self, data1, data2, api1, api2):
         """
             Функция обходит все значения двух словарей и вычисляет разницу котировок.
@@ -273,9 +274,6 @@ class DataHandler:
         except Exception as e:
             print(e)
 
-
-
-
 if __name__ == "__main__":
 
     # def trace_calls(frame, event, arg):
@@ -297,6 +295,7 @@ if __name__ == "__main__":
         bybit = BybitApi("Bybit")
         coinw = CoinWApi("Coin W")
         mexc = MexcApi("Mexc")
+        gate = GateApi("Gate.io")
 
         # #  дубли для теста
         # okx2 = OkxApi("Okx2")
@@ -304,8 +303,8 @@ if __name__ == "__main__":
         # coinw2 = CoinWApi("Coin W2")
 
         ex_list = []
-        ex_list.append(okx)
-        ex_list.append(bybit)
+        # ex_list.append(okx)
+        # ex_list.append(bybit)
 
 
 
@@ -321,6 +320,7 @@ if __name__ == "__main__":
         # test2 = await DH.get_best_ticker(ex_list)
 
         ex_list.append(mexc)
+        ex_list.append(gate)
 
         print(f"********** Тест на 4 биржах spred = {DH.min_spred} - {DH.max_spred}")
         test3 = await DH.get_best_ticker(ex_list)

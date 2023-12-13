@@ -1,4 +1,7 @@
 import asyncio
+import hashlib
+import hmac
+import time
 
 import httpx
 import requests
@@ -18,9 +21,10 @@ class GateApi(BaseApi):
         # Переменная для ссылки на api (сайт)
         self.domain = "https://api.gateio.ws"
         # Данные для Авторизации
-        # self.api_key = 'mx0vglwHDo6E88yURw'
-        # self.secret_key = '41c1149ceec443b981d195452712812a'
-        # self.passphrase = '@SuperSanta1995'
+        self.api_key = 'os.getenv('GATE_API_KEY')'
+        self.secret_key = 'os.getenv('GATE_SECRET_KEY')'
+        self.passphrase = '@SuperSanta1995'
+
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.
@@ -48,7 +52,6 @@ class GateApi(BaseApi):
             except Exception as e:
                 # Если возникает исключение, логируем ошибку и прерываем цикл
                 self.logger.error(f"Возникла ошибка: {e}")
-
     async def get_one_coin(self, coin_pair):
         """
             Асинхронная функция для получения информации о котировках и объеме торгов для указанной монетной пары.
@@ -69,10 +72,9 @@ class GateApi(BaseApi):
                 if response.status_code == 200:
                     # Если статус ответа 200, преобразуем ответ в JSON
                     data = response.json()
-
+                    # Преобразуем JSON в словарь
                     pair = coin_pair.lower().replace('_', '')
                     result_vol = round(float(data[0]["base_volume"]), 2)
-
                     processed_info[pair] = {
                         "coin": coin_pair,
                         "price": data[0]["last"],
@@ -85,11 +87,115 @@ class GateApi(BaseApi):
             except Exception as e:
                 self.logger.error(f"Возникла ошибка: {e}")
     async def get_coins_price_vol(self):
-        pass
-    async def get_network_commission(self,ccy):
-        pass
+        """
+            Асинхронная функция для обработки данных, полученных от API.
+            А именно приводит монетную пару к единому виду и делает словарь, где
+            ключ- монетная пара, и значения котировок и объемы в двух валютах.
+            :return: Словарь с информацией или None в случае ошибки.
+        """
+        # Эндпоинт куда отправлять запрос
+        endpoint = f'/api/v4/spot/tickers'
+        url = self.domain + endpoint
+        # Словарь с информацией о котировках и объеме
+        processed_info = {}
+        # Создаем клиент для асинхронного запроса
+        async with httpx.AsyncClient() as client:
+            try:
+                # Выполняем GET-запрос к URL
+                response = await client.get(url)
+                # Проверяем статус ответа
+                if response.status_code == 200:
+                    # Если статус ответа 200, преобразуем ответ в JSON
+                    data = response.json()
+                    for item in data:
+                        # Преобразуем JSON в словарь
+                        pair = item["currency_pair"].lower().replace('_', '')
+                        result_vol = round(float(data[0]["base_volume"]), 2)
+                        processed_info[pair] = {
+                            "coin": item["currency_pair"],
+                            "price": data[0]["last"],
+                            "vol24": str(result_vol)
+                        }
+                    return processed_info
+                else:
+                    self.logger.error(f"Ошибка при выполнении запроса: {response.status_code}")
+                    return {}
+            except Exception as e:
+                self.logger.error(f"Возникла ошибка: {e}")
+    async def get_network_commission(self, ccy):
+        """
+            Асинхронная функция для получения информации о валюте с перемоной Класса.
+            :param ccy: Валюта, для которой нужно получить информацию.
+            :return: Словарь с доступными сетями вывода и минимальными и максимальными комиссиями или None в случае ошибки.
+        """
+        await self._get_network_commission()
+        try:
+            # Словарь для хранения данных
+            commission_data = {}
+            # Запускаем цикл по данным
+            for coin_data in self.data_network:
+                # Если это наша монета
+                if coin_data["currency"] == ccy:
+                    coin_info = coin_data
+                    # Формируем словарь с названием сети и коммисией
+                    for network, comission in coin_info['withdraw_fix_on_chains'].items():
+                        network_name = network  # f"{network['name']}"
+                        min_fee = comission
+                        max_fee = comission
 
+                        commission_data[network_name] = {
+                            'minFee': min_fee,
+                            'maxFee': max_fee
+                        }
+            return commission_data
+        except Exception as e:
+            self.logger.error(f"Возникла ошибка Монета не найдена: {e} get_network_commission")
+            return {}
 
+    async def _get_network_commission(self):
+        """
+            Специфичный метод который делает запрос на все сети и коммисию сразу и сохроняет данные в переменную класса.
+            :return: Словарь с доступными сетями вывода и минимальными и максимальными комиссиями или None в случае ошибки.
+        """
+        try:
+            # Адрес для запроса информации
+            url=self.domain+"/api/v4/wallet/withdraw_status"
+            # Заголовок необходим для заполнения запроса
+            headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+            # Создаем подписаный заголовок
+            sign_headers = self._create_headers()
+            headers.update(sign_headers)
+            async with httpx.AsyncClient() as client:
+                # Выполняем GET-запрос к URL
+                response = await client.get(url, headers=headers)
+                # Проверяем статус ответа
+                if response.status_code == 200:
+                    # Если статус ответа 200, преобразуем ответ в JSON
+                    self.data_network = response.json()
+                else:
+                    # Если статус ответа не 200, выводим сообщение об ошибке и прерываем цикл
+                    self.logger.error("Ошибка при выполнении запроса")
+        except Exception as e:
+            self.logger.error(f"Возникла ошибка: {e}")
+
+    def _create_headers(self,method='GET', url='/api/v4/wallet/withdraw_status', query_string="", payload_string=""):
+        '''
+            Создает подписаный заголовок
+            :param method:
+            :param url:
+            :param query_string:
+            :param payload_string:
+            :return:
+        '''
+        timestamp = str(int(time.time()))
+        sha512_payload = hashlib.sha512(payload_string.encode(
+            'utf-8')).hexdigest() if payload_string \
+            else "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e"
+
+        signature_string = f"{method}\n{url}\n{query_string}\n{sha512_payload}\n{timestamp}"
+        signature = hmac.new(self.secret_key.encode('utf-8'), signature_string.encode('utf-8'), hashlib.sha512).hexdigest()
+
+        return {'KEY': self.api_key, 'Timestamp': timestamp, 'SIGN': signature}
 
 
 
@@ -97,9 +203,10 @@ class GateApi(BaseApi):
 if __name__ == "__main__":
     async def main():
         ga = GateApi("Gate.io")
-        full = await ga.get_one_coin('TON_USDT')
+        full = await ga.get_network_commission('BTT')
         print(full)
         print(len(full))
+
 
 
     asyncio.run(main())
