@@ -12,12 +12,11 @@ from exchange.BaseApi import BaseApi
 
 class MexcApi(BaseApi):
     def __init__(self, name ="Mexc"):
-        # Создаем логгер, используя суперкласс
         super().__init__(log_file='mexc_api.log',logger='Mexc')
         # Переменная для имени экземпляра класса
         self.name = name
         # Активирована или нет , для бота в тг
-        self.is_selected = True
+        self.is_selected = False
         # Специфичная переменая для хранения данных сетей и коммисии монет! около 8 тысяч
         self.data_network = None
         # Переменная для ссылки на api (сайт)
@@ -218,7 +217,8 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         mexc = MexcApi("Mexc")
-        per = await mexc.get_full_info()
+        await mexc._get_network_commission()
+        per = await mexc.get_network_commission("BTC")
         print(per)
         print()
         print(len(per))

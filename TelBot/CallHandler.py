@@ -207,6 +207,7 @@ async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             timer = context.chat_data.get('TIMER_ALERT')
             # Запрашиваем данные с API
             data_api = await context.chat_data.get('DH_Class').get_best_ticker(selected_exchanges)
+
             # Форматируем данные для отправки
             messages = await format_data_ticker(data_api)
             # Проверяем есть ли ответ от апи

@@ -100,7 +100,7 @@ class ListCoins:
             :return: Результат запроса или None в случае ошибки.
         """
         # Эндпоинт куда отправлять запрос
-        url = 'https://api.gateio.ws/api/v4/spot/currency_pairs'
+        url = 'https://api.gateio.ws/api/v4/spot/tickers'
         # Заголовок необходим для запроса
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         # Словаря для списка монет
@@ -115,7 +115,7 @@ class ListCoins:
                     # Если статус ответа 200, преобразуем ответ в JSON
                     data = response.json()
                     for item in data:
-                        coin1, coin2 = item['id'].split("_")
+                        coin1, coin2 = item['currency_pair'].split("_")
                         name = (coin1+coin2)#.lower()
                         coins_dict[name] = {
                             "coin1": coin1,

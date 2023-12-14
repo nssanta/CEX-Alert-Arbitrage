@@ -14,7 +14,7 @@ class CoinWApi(BaseApi):
         # Имя класса
         self.name = name
         # Активирована или нет , для бота в тг
-        self.is_selected = True
+        self.is_selected = False
         # Переменная для ссылки на api (сайт)
         self.domain = "https://api.coinw.com"
         # Данные для Авторизации

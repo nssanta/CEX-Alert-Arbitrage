@@ -20,7 +20,7 @@ class DataHandler:
         self.ListCoins = ListCoins()
         # Переменные хранят информацию о диапозоне фильтра
         self.max_spred = 2.5
-        self.min_spred = 0.5
+        self.min_spred = 0.8
     def set_min_max_spred(self,min: float, max: float):
         """
             Функция устанавливает максимум и минимум диапозона , для фильтра спреда.
@@ -30,28 +30,29 @@ class DataHandler:
         """
         self.min_spred = min
         self.max_spred = max
-    # async def get_common_pairs_and_data(self, apis):
-    #     """
-    #     Функция берет данные для всех монет котировку и объем и находим общиее.
-    #     :param apis: список бирж
-    #     :return: список общих монетных пар и словарь с данными с котировками и объемом
-    #     """
-    #     #start_time = time.time()
-    #
-    #     # Создаем список задач для каждого API, чтобы получить данные асинхронно
-    #     tasks = [api.get_coins_price_vol() for api in apis]
-    #     # Запускаем все задачи асинхронно и ждем их завершения
-    #     all_data = await asyncio.gather(*tasks)
-    #     # Получаем список всех пар из всех словарей
-    #     all_pairs = [pair for data in all_data for pair in data.keys()]
-    #     # Считаем количество каждой пары
-    #     pair_counts = Counter(all_pairs)
-    #     # Находим общие пары, которые есть в каждом словаре
-    #     # Это те пары, количество которых равно количеству API
-    #     common_pairs = [pair for pair, count in pair_counts.items() if count == len(apis)]
-    #     #end_time = time.time()
-    #     #print(f'Функция get_common_pairs_and_data отработала за {end_time - start_time}')
-    #     return common_pairs, all_data
+    async def get_common_pairs_and_data(self, apis):
+        """
+        Функция берет данные для всех монет котировку и объем и находим общиее.
+        :param apis: список бирж
+        :return: список общих монетных пар и словарь с данными с котировками и объемом
+        """
+        #start_time = time.time()
+
+        # Создаем список задач для каждого API, чтобы получить данные асинхронно
+        tasks = [api.get_coins_price_vol() for api in apis]
+        # Запускаем все задачи асинхронно и ждем их завершения
+        all_data = await asyncio.gather(*tasks)
+        # Получаем список всех пар из всех словарей
+        all_pairs = [pair for data in all_data for pair in data.keys()]
+        # Считаем количество каждой пары
+        pair_counts = Counter(all_pairs)
+        # Находим общие пары, которые есть в каждом словаре
+        # Это те пары, количество которых равно количеству API
+        common_pairs = [pair for pair, count in pair_counts.items() if count == len(apis)]
+       # print(f"ОБЩИЕ ПАРЫ = {len(common_pairs)}")
+        #end_time = time.time()
+        #print(f'Функция get_common_pairs_and_data отработала за {end_time - start_time}')
+        return common_pairs, all_data
 
     async def get_exchange_data(self, data1, data2, api1, api2):
         """
@@ -65,35 +66,61 @@ class DataHandler:
         #start_time = time.time()
         # Создаем словарь для хранения результата
         result = {}
-        # Обходим все пары в данных
-        for pair in data1.keys():
-            # Если пара есть в обоих словарях
-            if pair in data2:
-                # Вычисляем разницу в котировках
-                a = float(data1[pair]['price'])
-                b = float(data2[pair]['price'])
-                dif = ((a - b) / a) * 100
-                # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
-                if self.min_spred < dif <= self.max_spred:
-                    if a < b:
-                        result[pair] = {
-                            'data': {
-                                api1.name: data1[pair],
-                                api2.name: data2[pair]
-                            },
-                            'dif': round(dif, 4)
-                        }
+        try:
+            # Обходим все пары в данных
+            for pair in data1.keys():
+                # Если пара есть в обоих словарях
+                if pair in data2:
+                    # Вычисляем разницу в котировках
+                    a = float(data1[pair]['price'])
+                    b = float(data2[pair]['price'])
+                    if a != 0 and b != 0:
+                        dif = ((a - b) / a) * 100
+                        # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
+                        if self.min_spred < dif <= self.max_spred:
+                            if a < b:
+                                result[pair] = {
+                                    'data': {
+                                        api1.name: data1[pair],
+                                        api2.name: data2[pair]
+                                    },
+                                    'dif': round(dif, 4)
+                                }
+                            else:
+                                result[pair] = {
+                                    'data': {
+                                        api2.name: data2[pair],
+                                        api1.name: data1[pair]
+                                    },
+                                    'dif': round(dif, 4)
+                                }
                     else:
-                        result[pair] = {
-                            'data': {
-                                api2.name: data2[pair],
-                                api1.name: data1[pair]
-                            },
-                            'dif': round(dif, 4)
-                        }
-        #end_time = time.time()
-        #print(f'Функция get_exchange_data отработала за {end_time - start_time}')
-        return result
+                        print(f" a == pair = {pair} datapair1 = {data1[pair]} price = {float(data1[pair]['price'])} ")
+                        print(f"b == pair = {pair} datapair2 = {data2[pair]} price = {float(data2[pair]['price'])} ")
+            #end_time = time.time()
+            #print(f'Функция get_exchange_data отработала за {end_time - start_time}')
+            # diff_counts = {}
+            # for pair, info in result.items():
+            #     diff = info['dif']
+            #     diff = round(diff)  # Округляем до целого процента
+            #     if diff not in diff_counts:
+            #         diff_counts[diff] = 0
+            #     diff_counts[diff] += 1
+            #
+            # print("Словарь с процентами разницы и количеством соответствующих пар:")
+            # total_diffs = 0
+            # total_pairs = 0
+            # for diff, count in diff_counts.items():
+            #     print(f"{diff}%: {count} pair(s)")
+            #     total_diffs += 1
+            #     total_pairs += count
+            #
+            # print(f"Общее количество процентов: {total_diffs}")
+            # print(f"Общее количество пар: {total_pairs}")
+            return result
+        except Exception as e:
+            print(f"Возникла ошибка монета = {pair} a={a}, b={b}, dif = {round(((a - b) / a)*100,4)}: {e} get_exchange_data")
+            return {}
     async def get_all_exchange_data(self, apis):
         """
         Функция принимает словарь с биржами и преобразует его в словарь с Биржа-Биржа -> монета -> Биржа ....
@@ -138,6 +165,7 @@ class DataHandler:
                             # Создаем задачу для получения комиссии сети для этой монеты
                             coin_info = await self.ListCoins.get_first_coin(coin)
                             task = asyncio.create_task(api.get_network_commission(coin_info))
+                            # print(f'API {api.name} = {api.data_network == None}')
                             tasks[api.name] = task
                     # Собираем результаты асинхронных задач
                     network_commissions = await asyncio.gather(*tasks.values())
@@ -150,7 +178,7 @@ class DataHandler:
             return all_exchange_data
         except Exception as e:
             # Обработка исключений
-            print(f'Произошла ошибка: {e}')
+            print(f'Произошла ошибка метод get_best_ticker: {e}')
             return None  # Можно выбрасывать исключение или возвращать информацию об ошибке
 
     # Мой Вариант
@@ -227,12 +255,14 @@ class DataHandler:
             # Разделяем монетную пару
             onecoin = await self.ListCoins.get_first_coin(coin_pair.upper())
             twocoin = coin_pair[len(onecoin):].upper()#coin_pair.upper().split(onecoin)[1]
-            print(onecoin,twocoin)
+            #print(onecoin,twocoin)
             # Формируем переменных с монетными парами для каждой биржи
+            #  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Обязательно добавь!!!!!!!!!!!!!!!
             coinw_pair = f"{onecoin}_{twocoin}".lower()
             bybit_pair = coin_pair.upper()
             okx_pair = f"{onecoin}-{twocoin}".upper()
             mexc_pair = f"{onecoin}_{twocoin}".lower()
+            gateio_pair = f"{onecoin}_{twocoin}".lower()
             # Список задач.
             tasks = []
             # Проходим по списку бирж и проверяем на основе имени.
@@ -248,6 +278,9 @@ class DataHandler:
                     tasks.append(task)
                 elif "Mexc" in exchang.name:
                     task = asyncio.create_task(exchang.get_one_coin(mexc_pair))
+                    tasks.append(task)
+                elif "Gate.io" in exchang.name:
+                    task = asyncio.create_task(exchang.get_one_coin(gateio_pair))
                     tasks.append(task)
             # Запускаем все запросы одновременно
             results = await asyncio.gather(*tasks)
@@ -304,9 +337,7 @@ if __name__ == "__main__":
 
         ex_list = []
         # ex_list.append(okx)
-        # ex_list.append(bybit)
-
-
+        #ex_list.append(bybit)
 
         DH = DataHandler("DH")
         await DH.ListCoins.initialize_data()
@@ -318,12 +349,15 @@ if __name__ == "__main__":
 
         # print("********** Тест на 3 биржах")
         # test2 = await DH.get_best_ticker(ex_list)
-
+        #await gate._load_network_commission()
         ex_list.append(mexc)
         ex_list.append(gate)
 
-        print(f"********** Тест на 4 биржах spred = {DH.min_spred} - {DH.max_spred}")
+
+
+        print(f"********** Тест на _ биржах spred spisok = {ex_list} = {DH.min_spred} - {DH.max_spred}")
         test3 = await DH.get_best_ticker(ex_list)
+       # print(test3)
         #newtest = await DH.get_best_ticker_for_all_pairs(ex_list)
 
     asyncio.run(main())
