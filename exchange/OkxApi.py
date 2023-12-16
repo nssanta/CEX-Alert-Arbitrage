@@ -162,6 +162,7 @@ class OkxApi(BaseApi):
                 if response.status_code == 200:
                     # Если статус ответа 200, преобразуем ответ в JSON
                     data = response.json()
+                    self.logger.error(f'{data}')
                     # Проверяем код ответа в данных
                     if data["code"] == "0":
                         # Если код ответа 0, добавляем информацию о валюте в наш словарь

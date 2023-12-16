@@ -19,8 +19,9 @@ class DataHandler:
         # Переменная, класс который содержит список монет(разбитые монетные пары)
         self.ListCoins = ListCoins()
         # Переменные хранят информацию о диапозоне фильтра
-        self.max_spred = 2.5
-        self.min_spred = 0.8
+        self.max_spred = 99.9
+        self.min_spred = 0.1
+
     def set_min_max_spred(self,min: float, max: float):
         """
             Функция устанавливает максимум и минимум диапозона , для фильтра спреда.
@@ -357,7 +358,8 @@ if __name__ == "__main__":
 
         print(f"********** Тест на _ биржах spred spisok = {ex_list} = {DH.min_spred} - {DH.max_spred}")
         test3 = await DH.get_best_ticker(ex_list)
-       # print(test3)
+        print(test3)
+        print(len(test3))
         #newtest = await DH.get_best_ticker_for_all_pairs(ex_list)
 
     asyncio.run(main())

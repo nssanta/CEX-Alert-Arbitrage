@@ -11,8 +11,8 @@ from exchange.BaseApi import BaseApi
 
 
 class MexcApi(BaseApi):
-    def __init__(self, name ="Mexc"):
-        super().__init__(log_file='mexc_api.log',logger='Mexc')
+    def __init__(self, name="Mexc"):
+        super().__init__(log_file='mexc_api.log', logger='Mexc')
         # Переменная для имени экземпляра класса
         self.name = name
         # Активирована или нет , для бота в тг
@@ -20,12 +20,13 @@ class MexcApi(BaseApi):
         # Специфичная переменая для хранения данных сетей и коммисии монет! около 8 тысяч
         self.data_network = None
         # Переменная для ссылки на api (сайт)
-        #self.domain = "https://api.mexc.com"
+        # self.domain = "https://api.mexc.com"
         self.domain = "https://www.mexc.com"
         # Данные для Авторизации
         self.api_key = 'mx0vglwHDo6E88yURw'
         self.secret_key = '41c1149ceec443b981d195452712812a'
         self.passphrase = '@SuperSanta1995'
+
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.
@@ -33,12 +34,12 @@ class MexcApi(BaseApi):
         """
         # !!!!!!
         # Запускаем метод для получения сетей и коммиссии для всех доступных моент. Специфичный метод и подход.
-        await self._get_network_commission()
+        await self._load_network_commission()
 
         # URL API, с которого мы будем получать данные
-        #endpoint = "/api/v3/exchangeInfo?permissions=SPOT"
-        endpoint ='/open/api/v2/market/ticker'
-        url = self.domain+endpoint
+        # endpoint = "/api/v3/exchangeInfo?permissions=SPOT"
+        endpoint = '/open/api/v2/market/ticker'
+        url = self.domain + endpoint
         # Список для хранения тикеров
         tickers = []
         # Цикл продолжается, пока есть URL для запроса (ответ не в одной странице)
@@ -71,6 +72,7 @@ class MexcApi(BaseApi):
                     break
         # Возвращаем список тикеров
         return tickers
+
     async def get_one_coin(self, coin_pair):
         """
             Асинхронная функция для получения информации о котировках для указанной монетной пары.
@@ -114,6 +116,7 @@ class MexcApi(BaseApi):
             # Логируем общую ошибку
             self.logger.error(f"Ошибка: {e}")
             return {}
+
     async def get_coins_price_vol(self):
         """
             Асинхронная функция для обработки данных, полученных от API.
@@ -132,7 +135,7 @@ class MexcApi(BaseApi):
                 pair = item["symbol"].lower().replace("_", "")
                 # Округляем число объема
                 # result = round(float(item["vol24h"]) * float(item["last"]), 2)
-                resultvol = round(float(item['volume']), 2)
+                resultvol = round(float(item['amount']), 2)
                 # Создаем новый словарь для этой пары
                 processed_info[pair] = {
                     # Поле стоковое название монеты
@@ -146,6 +149,7 @@ class MexcApi(BaseApi):
                 self.logger.error(f"Возникла ошибка: {e}")
         # Возвращаем обработанную информацию
         return processed_info
+
     async def get_network_commission(self, ccy):
         """
             Асинхронная функция для получения информации о валюте с перемоной Класса.
@@ -162,19 +166,37 @@ class MexcApi(BaseApi):
                     coin_info = coin_data
                     # Формируем словарь с названием сети и коммисией
                     for network in coin_info['networkList']:
-                        network_name = network['network']# f"{network['name']}"
-                        min_fee = network['withdrawMin']
-                        max_fee = network['withdrawMax']
+                        network_name = network['network']  # Название сети
+                        min_fee = network['withdrawMin']  # Минимальная колличество вывода
+                        max_fee = network['withdrawMax']  # Максимальная колличество вывода
+                        commission = network['withdrawFee']  # Комиссия вывода
+                        # Множитель( Кратность вывода)
+                        #factor = network['withdrawIntegerMultiple']
+                        factor = network.get('withdrawIntegerMultiple', 'Нет') if network.get(
+                            'withdrawIntegerMultiple') is not None else 'Нет'
+                        contract = network['contract']  # Адресс контракта , если он имеется.
+                        # Может ли быть один адресс для разных сетей.
+                        oneaddr = 'Да' if str(network.get('sameAddress', False)).capitalize() == 'True' else 'Нет'
+                        # Работает ли сеть для вывода
+                        enabled = 'Да' if str(network.get('withdrawEnable', False)).capitalize() == 'True' else 'Нет'
 
                         commission_data[network_name] = {
-                            'minFee': min_fee,
-                            'maxFee': max_fee
+                            'enabled': enabled,
+                            'minFee': commission,
+                            'maxFee': commission,
+                            'outMin': min_fee,
+                            'outMax': max_fee,
+                            'contract': contract[-6:],
+                            #'factor': factor,
+                            #'oneaddr': oneaddr
+
                         }
             return commission_data
         except Exception as e:
             self.logger.error(f"Возникла ошибка Монета не найдена: {e} get_network_commission")
             return {}
-    async def _get_network_commission(self):
+
+    async def _load_network_commission(self):
         """
             Специфичный метод который делает запрос на все сети и коммисию сразу и сохроняет данные в переменную класса.
             :param ccy: Валюта, для которой нужно получить информацию.
@@ -192,6 +214,7 @@ class MexcApi(BaseApi):
                 self.data_network = response.json()
         except Exception as e:
             self.logger.error(f"Возникла ошибка: {e} __get_network_commission")
+
     def _create_headers(self, request_type="GET", endpoint="/api/v3/capital/config/getall", body=""):
         """
             Специфический метод, который создает берет данные аккаунта, (API) и создает заголовок для запроса
@@ -202,7 +225,8 @@ class MexcApi(BaseApi):
             recv_window = '5000'
             total_params = f'timestamp={timestamp}&recvWindow={recv_window}'
             # Create the signature for the endpoint
-            signature = hmac.new(self.secret_key.encode('utf-8'), total_params.encode('utf-8'), hashlib.sha256).hexdigest()
+            signature = hmac.new(self.secret_key.encode('utf-8'), total_params.encode('utf-8'),
+                                 hashlib.sha256).hexdigest()
             headers = {
                 'X-MEXC-APIKEY': self.api_key,
             }
@@ -213,12 +237,15 @@ class MexcApi(BaseApi):
             self.logger.error(f"Возникла ошибка: {e} __create_headers")
             return [], ""
 
+
 if __name__ == '__main__':
     start_time = time.time()
+
+
     async def main():
         mexc = MexcApi("Mexc")
-        await mexc._get_network_commission()
-        per = await mexc.get_network_commission("BTC")
+        await mexc._load_network_commission()
+        per = await mexc.get_full_info()
         print(per)
         print()
         print(len(per))

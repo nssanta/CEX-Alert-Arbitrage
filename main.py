@@ -133,3 +133,24 @@ if __name__ == "__main__":
     #application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY, button_handle))
 # Обработчик для кнопок
 # application.add_handler(CallbackQueryHandler(button))
+import okx.Funding as Funding
+
+
+
+# if __name__ == '__main__':
+# # API initialization
+# #     apikey = "YOUR_API_KEY"
+# #     secretkey = "YOUR_SECRET_KEY"
+#     apikey = 'be0263b3-e366-4df4-91aa-01ac1e431b5a'
+#     secretkey = '752444EDE261ADF4EA58E24C3B553644'
+#     passphrase = "@SuperSanta1995"
+#
+#     flag = "0"  # Production trading: 0, Demo trading: 1
+#
+#     fundingAPI = Funding.FundingAPI(apikey, secretkey, passphrase, False, flag)
+#
+#     # Get deposit address
+#     result = fundingAPI.get_deposit_address(
+#         ccy="BTC"
+#     )
+#     print(result)

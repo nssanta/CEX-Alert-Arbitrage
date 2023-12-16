@@ -78,48 +78,90 @@ async def format_data_for_coin_pair(data):
             messages.append(message)
     # Возвращаем список сообщений
     return messages
+# async def format_data_ticker(data):
+#     """
+#         Функция для форматирования данных, полученных от API, в сообщения для отправки.
+#         :param data: Данные, полученные от API.
+#         :return: Список сообщений для отправки.
+#     """
+#     messages = []
+#     try:
+#         for exchange, coins in data.items():
+#             for coin, coin_data in coins.items():
+#                 # Получаем названия бирж из блока 'data'
+#                 exchange_names = list(coin_data['data'].keys())
+#                 # Формируем строку с названиями бирж
+#                 exchange_string = ' ➤ '.join(exchange_names)
+#                 # Начинаем формирование сообщения для каждой монеты
+#                 message_parts = [f"{exchange_string}\n{'💰 ' + coin.upper()}\n"]
+#                 for platform, platform_data in coin_data['data'].items():
+#                     # Добавляем информацию о платформе в сообщение
+#                     message_parts.append(
+#                         f"\n{platform}: \n💲 Цена = {platform_data['price']} , \n📊 Объем (24h) = {platform_data['vol24']}\nСети:\n"
+#                     )
+#                     if 'network' in platform_data and platform_data['network'] is not None:
+#                         for network, network_data in platform_data['network'].items():
+#                             if network_data is not None:
+#                                 # Получаем комиссию для каждой сети
+#                                 fee = network_data.get('maxFee', network_data.get('minFee'))
+#                                 message_parts.append(f"   {network} - комиссия = {fee}\n")
+#                             else:
+#                                 # Если данных нет, добавляем сообщение об отсутствии данных
+#                                 message_parts.append(f"   {network} - данные отсутствуют\n")
+#                     else:
+#                         # Если данных о сети нет, добавляем сообщение об отсутствии данных
+#                         message_parts.append("   Данные о сети отсутствуют\n")
+#                 # Добавляем разницу в котировках в сообщение
+#                 message_parts.append(f"\n🎯 Разница цен: {coin_data['dif']}%\n")
+#                 # Добавляем сообщение в список сообщений
+#                 messages.append(''.join(message_parts))
+#         return messages
+#
+#     except Exception as e:
+#         logger.error(f"Возникла ошибка: {e} функция format_data_ticker")
+#         return []
 async def format_data_ticker(data):
     """
-        Функция для форматирования данных, полученных от API, в сообщения для отправки.
-        :param data: Данные, полученные от API.
-        :return: Список сообщений для отправки.
+    Функция для форматирования данных, полученных от API, в сообщения для отправки.
+    :param data: Данные, полученные от API.
+    :return: Список сообщений для отправки.
     """
     messages = []
     try:
         for exchange, coins in data.items():
             for coin, coin_data in coins.items():
-                # Получаем названия бирж из блока 'data'
                 exchange_names = list(coin_data['data'].keys())
-                # Формируем строку с названиями бирж
                 exchange_string = ' ➤ '.join(exchange_names)
-                # Начинаем формирование сообщения для каждой монеты
                 message_parts = [f"{exchange_string}\n{'💰 ' + coin.upper()}\n"]
                 for platform, platform_data in coin_data['data'].items():
-                    # Добавляем информацию о платформе в сообщение
                     message_parts.append(
-                        f"\n{platform}: \n💲 Цена = {platform_data['price']} , \n📊 Объем (24h) = {platform_data['vol24']}\nСети:\n"
+                        f"{platform}: \n💲 Цена = {platform_data['price']} , \n📊 Объем (24h) = {platform_data['vol24']}\nСети:\n"
                     )
                     if 'network' in platform_data and platform_data['network'] is not None:
                         for network, network_data in platform_data['network'].items():
                             if network_data is not None:
-                                # Получаем комиссию для каждой сети
                                 fee = network_data.get('maxFee', network_data.get('minFee'))
-                                message_parts.append(f"   {network} - комиссия = {fee}\n")
+                                # Добавляем новые поля в сообщение о сети с новой строки
+                                message_parts.append(
+                                    f"   {network} - \n   Работает: {network_data.get('enabled', 'Данные отсутствуют')}\n"
+                                    f"   Комиссия мин: {network_data.get('minFee', 'Данные отсутствуют')}\n"
+                                    f"   Комиссия макс: {network_data.get('maxFee', 'Данные отсутствуют')}\n"
+                                    f"   Минимальный вывод: {network_data.get('outMin', 'Данные отсутствуют')}\n"
+                                    f"   Максимальный вывод: {network_data.get('outMax', 'Данные отсутствуют')}\n"
+                                    f"   Контракт (6 last): {network_data.get('contract', 'Данные отсутствуют')}\n"
+                                )
                             else:
-                                # Если данных нет, добавляем сообщение об отсутствии данных
                                 message_parts.append(f"   {network} - данные отсутствуют\n")
                     else:
-                        # Если данных о сети нет, добавляем сообщение об отсутствии данных
                         message_parts.append("   Данные о сети отсутствуют\n")
-                # Добавляем разницу в котировках в сообщение
                 message_parts.append(f"\n🎯 Разница цен: {coin_data['dif']}%\n")
-                # Добавляем сообщение в список сообщений
-                messages.append(''.join(message_parts))
+                messages.append('\n'.join(message_parts))  # Объединяем все части сообщения с новой строки
         return messages
 
     except Exception as e:
         logger.error(f"Возникла ошибка: {e} функция format_data_ticker")
         return []
+
 
 
 

@@ -142,6 +142,7 @@ class BybitApi(BaseApi):
             if response.status_code == 200:
                 # Если ответ успешный (статус 200), обработка данных
                 data = response.json()
+                self.logger.error(f'{data}')
                 currency_info = {}
                 if 'result' in data:
                     # Парсинг информации о валюте из ответа API
@@ -190,7 +191,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         bybit = BybitApi("Bybit")
-        per = await bybit.get_one_coin("BTCUSDT")
+        per = await bybit.get_full_info()
         print(per)
         print()
         print(len(per))

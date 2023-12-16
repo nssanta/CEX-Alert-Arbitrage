@@ -87,14 +87,14 @@ async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYP
         context.chat_data.setdefault('Bybit', BybitApi("Bybit"))
         context.chat_data.setdefault('Coin W', CoinWApi("Coin W"))
         context.chat_data.setdefault('Mexc', MexcApi("Mexc"))
-        context.chat_data.setdefault('Gate.io', GateApi("Gate.io"))
+        context.chat_data.setdefault('Gate_io', GateApi("Gate_io"))
 
         context.chat_data.setdefault('EXCHANGE_LIST', [
             context.chat_data.get('Okx'),
             context.chat_data.get('Bybit'),
             context.chat_data.get('Coin W'),
             context.chat_data.get('Mexc'),
-            context.chat_data.get('Gate.io'),
+            context.chat_data.get('Gate_io'),
 
         ])
     except Exception as e:

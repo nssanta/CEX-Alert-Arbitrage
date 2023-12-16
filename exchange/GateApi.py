@@ -104,7 +104,7 @@ class GateApi(BaseApi):
             for item in data:
                 # Преобразуем JSON в словарь
                 pair = item["currency_pair"].lower().replace('_', '')
-                result_vol = round(float(item["base_volume"]), 2)
+                result_vol = round(float(item["quote_volume"]), 2)
                 processed_info[pair] = {
                     "coin": item["currency_pair"],
                     "price": item["last"],
@@ -223,61 +223,70 @@ class GateApi(BaseApi):
         """
         #self._load_network_commission(self)
         try:
+            # Получаем остальные данные с другого эндпоинта.
+            contract_data = await self.get_contract_address(ccy)
             # Словарь для хранения данных
             commission_data = {}
             for currency_data in self.data_network:
                 if currency_data['currency'] == ccy:
                     withdraw_fix_on_chains = currency_data['withdraw_fix_on_chains']
                     for network, fee_data in withdraw_fix_on_chains.items():
-                        commission_data[network] = {
+                        # Создаем переменные для зоны видимости
+                        name_network = ''
+                        enabled = ''
+                        contract = ''
+                        min_fee = currency_data['withdraw_amount_mini']       # Минимальная колличество вывода
+                        max_fee = currency_data['withdraw_eachtime_limit']    # Максимальная колличество вывода
+                        # Цикл по данным контракта для получения тех которые соответствуют сети.
+                        for contr in contract_data:
+                            if contr['chain'] == network:
+                                # Работает ли сеть для вывода
+                                name_network = contr['name_en']
+                                enabled = 'Да' if contr['is_withdraw_disabled'] == 0 else 'Нет'
+                                contract = contr['contract_address']    # Адресс контракта , если он имеется.
+                        #commission_data[network] = {
+                        commission_data[name_network] = {
+                            'enabled': enabled,
                             'minFee': fee_data,
-                            'maxFee': fee_data
+                            'maxFee': fee_data,
+                            'outMin': min_fee,
+                            'outMax': max_fee,
+                            'contract': contract[-6:],
                         }
             return commission_data
 
         except Exception as e:
             self.logger.error(f"Возникла ошибка Монета не найдена: {e} get_network_commission {ccy}")
             return {}
-        # Запускаем цикл по данным
-        # for coin_data in self.data_network:
-        #     # Если это наша монета
-        #     if coin_data["currency"] == ccy:
-        #         coin_info = coin_data
-        #         # Формируем словарь с названием сети и коммисией
-        #         for network, comission in coin_info['withdraw_fix_on_chains'].items():
-        #             network_name = network  # f"{network['name']}"
-        #             min_fee = comission
-        #             max_fee = comission
-        #             commission_data[network_name] = {
-        #                 'minFee': min_fee,
-        #                 'maxFee': max_fee
-        #             }
+
+    async def get_contract_address(self, coin):
+        """
+            Метод который принимает монету и возвращает адресс контракта.
+            :return: адресс контракта.
+        """
+        #host = "https://api.gateio.ws"
+        # Заполняем данные для запроса к серверу через эндпоинт
+        prefix = "/api/v4"
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        url = f'{self.domain}{prefix}/wallet/currency_chains'
+        query_param = f'currency={coin}'
+        try:
+            # Делаем запрос
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, headers=headers, params=query_param)
+                data = response.json()
+                # Если ответ не пустой возвращаем значение адресса контракта
+                return data
+                #return data[0]['contract_address'] if data else None
+        except Exception as e:
+            self.logger.error(f"Возникла ошибка: {e} get_contract_address {coin}")
+            return None
 
     async def _load_network_commission(self):
         """
             Специфичный метод который делает запрос на все сети и коммисию сразу и сохроняет данные в переменную класса.
             :return: Словарь с доступными сетями вывода и минимальными и максимальными комиссиями или None в случае ошибки.
         """
-        # try:
-        #     # Адрес для запроса информации
-        #     url=self.domain+"/api/v4/wallet/withdraw_status"
-        #     # Заголовок необходим для заполнения запроса
-        #     headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        #     # Создаем подписаный заголовок
-        #     sign_headers = self._create_headers()
-        #     headers.update(sign_headers)
-        #     async with httpx.AsyncClient() as client:
-        #         # Выполняем GET-запрос к URL
-        #         response = await client.get(url, headers=headers)
-        #         # print(f'response = {response.json()}')
-        #         # self.logger.error(f'RESPONSE = \n {response.status_code}')
-        #         #  преобразуем ответ в JSON
-        #         self.data_network = response.json()
-        # except Exception as e:
-        #     self.logger.error(f"Возникла ошибка при создание словаря с монетами : {e}")
-        #     # Если вызвало ошибку ждем две секунды и пробуем снова.
-        #     await asyncio.sleep(2)
-        #     await self._load_network_commission()
         try:
             # Данные для запроса
             #endpoint = '/api/v3/capital/config/getall'
@@ -291,7 +300,6 @@ class GateApi(BaseApi):
                 response = await client.get(url, headers=sign_headers)
                 # Сохраняем данные в переменую класса.
                 self.data_network = response.json()
-                # print(f'DATA = {response.json()}')
         except Exception as e:
             self.logger.error(f"Возникла ошибка: {e} _load_network_commission")
             await asyncio.sleep(2)
@@ -322,8 +330,8 @@ class GateApi(BaseApi):
 if __name__ == "__main__":
     async def main():
         ga = GateApi("Gate.io")
-       # await ga._load_network_commission()
-        full = await ga.get_coins_price_vol()
+        #await ga._load_network_commission()
+        full = await ga.get_full_info()
         print(full)
         print(len(full))
 
