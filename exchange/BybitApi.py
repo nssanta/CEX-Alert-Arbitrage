@@ -142,7 +142,6 @@ class BybitApi(BaseApi):
             if response.status_code == 200:
                 # Если ответ успешный (статус 200), обработка данных
                 data = response.json()
-                self.logger.error(f'{data}')
                 currency_info = {}
                 if 'result' in data:
                     # Парсинг информации о валюте из ответа API

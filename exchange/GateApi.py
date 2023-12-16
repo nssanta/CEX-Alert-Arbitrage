@@ -15,7 +15,7 @@ class GateApi(BaseApi):
         # Переменная для имени экземпляра класса
         self.name = name
         # Активирована или нет , для бота в тг
-        self.is_selected = False
+        self.is_selected = True
         # Специфичная переменая для хранения данных сетей и коммисии монет! около 8 тысяч
         self.data_network = None
         # Переменная для ссылки на api (сайт)

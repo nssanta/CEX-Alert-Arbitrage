@@ -98,8 +98,8 @@ def main() -> None:
             Variable.TIMER_SETTING_STATE: [MessageHandler(filters.Regex('^30 секунд$|^1 минута$|'
             '^2 минуты$|^5 минут$|^10 минут$|^Установить вручную$|^<- назад$'), UiHandler.bh_setting_timer)],
 
-            Variable.SPREAD_SETTING_STATE: [MessageHandler(filters.Regex('^0.5 - 2.5$|^0.6 - 2.5$|^0.7 - 2.5$|'
-            '^0.8 - 2.5$|^0.9 - 2.5$|^1 - 2.5$|^Установить вручную$|^<- назад$'), UiHandler.bh_setting_spreed)],
+            Variable.SPREAD_SETTING_STATE: [MessageHandler(filters.Regex('^0.8 - 2.5$|^1 - 2.5$|^1.5 - 2.5$|'
+            '^2 - 2.5$|^3 - 5$|^5 - 7$|^Установить вручную$|^<- назад$'), UiHandler.bh_setting_spreed)],
 
             Variable.INPUT_TIME_SETTING_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
                                                               CallHandler.input_timer)],
@@ -137,20 +137,4 @@ import okx.Funding as Funding
 
 
 
-# if __name__ == '__main__':
-# # API initialization
-# #     apikey = "YOUR_API_KEY"
-# #     secretkey = "YOUR_SECRET_KEY"
-#     apikey = 'be0263b3-e366-4df4-91aa-01ac1e431b5a'
-#     secretkey = '752444EDE261ADF4EA58E24C3B553644'
-#     passphrase = "@SuperSanta1995"
-#
-#     flag = "0"  # Production trading: 0, Demo trading: 1
-#
-#     fundingAPI = Funding.FundingAPI(apikey, secretkey, passphrase, False, flag)
-#
-#     # Get deposit address
-#     result = fundingAPI.get_deposit_address(
-#         ccy="BTC"
-#     )
-#     print(result)
+

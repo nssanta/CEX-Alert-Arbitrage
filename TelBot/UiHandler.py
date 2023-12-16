@@ -191,28 +191,28 @@ async def bh_setting_spreed(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         if str(user_id) in authorized_users:
             # Обрабатываем нажатие кнопки в зависимости от ее данных
-            if text == "0.5 - 2.5":
-                context.chat_data.get('DH_Class').set_min_max_spred(0.5, 2.5)
-                await update.message.reply_text('Спред изменен',reply_markup=UiBot.keyboard_setting_menu(update, context))
-                return SETTING_STATE
-            elif text == "0.6 - 2.5":
-                context.chat_data.get('DH_Class').set_min_max_spred(0.6, 2.5)
-                await update.message.reply_text('Спред изменен', reply_markup=UiBot.keyboard_setting_menu(update, context))
-                return SETTING_STATE
-            elif text == "0.7 - 2.5":
-                context.chat_data.get('DH_Class').set_min_max_spred(0.7, 2.5)
-                await update.message.reply_text('Спред изменен', reply_markup=UiBot.keyboard_setting_menu(update, context))
-                return SETTING_STATE
-            elif text == "0.8 - 2.5":
+            if text == "0.8 - 2.5":
                 context.chat_data.get('DH_Class').set_min_max_spred(0.8, 2.5)
-                await update.message.reply_text('Спред изменен', reply_markup=UiBot.keyboard_setting_menu(update, context))
-                return SETTING_STATE
-            elif text == "0.9 - 2.5":
-                context.chat_data.get('DH_Class').set_min_max_spred(0.9, 2.5)
-                await update.message.reply_text('Спред изменен', reply_markup=UiBot.keyboard_setting_menu(update, context))
+                await update.message.reply_text('Спред изменен',reply_markup=UiBot.keyboard_setting_menu(update, context))
                 return SETTING_STATE
             elif text == "1 - 2.5":
                 context.chat_data.get('DH_Class').set_min_max_spred(1, 2.5)
+                await update.message.reply_text('Спред изменен', reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            elif text == "1.5 - 2.5":
+                context.chat_data.get('DH_Class').set_min_max_spred(1.5, 2.5)
+                await update.message.reply_text('Спред изменен', reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            elif text == "2 - 2.5":
+                context.chat_data.get('DH_Class').set_min_max_spred(2, 2.5)
+                await update.message.reply_text('Спред изменен', reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            elif text == "3 - 5":
+                context.chat_data.get('DH_Class').set_min_max_spred(3, 5)
+                await update.message.reply_text('Спред изменен', reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            elif text == "5 - 7":
+                context.chat_data.get('DH_Class').set_min_max_spred(5, 7)
                 await update.message.reply_text('Спред изменен', reply_markup=UiBot.keyboard_setting_menu(update, context))
                 return SETTING_STATE
             elif text == "Установить вручную":

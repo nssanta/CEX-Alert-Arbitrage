@@ -151,38 +151,68 @@ class OkxApi(BaseApi):
         headers = self._create_headers(endpoint=endpoint)
         # URL API, с которого мы будем получать данные
         url = self.domain+endpoint
-
         # Словарь для хранения информации о валюте
         currency_info = {}
-        async with httpx.AsyncClient() as client:
-            try:
+        try:
+            # Получаем остальные данные с другого эндпоинта.
+            contract_data = await self.get_contract_address(ccy)
+            async with httpx.AsyncClient() as client:
                 # Выполняем GET-запрос к URL
                 response = await client.get(url, headers= headers)
                 # Проверяем статус ответа
                 if response.status_code == 200:
                     # Если статус ответа 200, преобразуем ответ в JSON
                     data = response.json()
-                    self.logger.error(f'{data}')
                     # Проверяем код ответа в данных
                     if data["code"] == "0":
                         # Если код ответа 0, добавляем информацию о валюте в наш словарь
                         for item in data["data"]:
                             if item["ccy"] == ccy:
+                                enabled = 'Да' if str(item.get('canWd', False)).capitalize() == 'True' else 'Нет'
+                                # Цикл по данным контракта для получения тех которые соответствуют сети.
+                                for contr in contract_data:
+                                    if contr['chain'] == item["chain"]:
+                                        contract = contr["ctAddr"]
                                 currency_info[item["chain"]] = {
+                                    'enabled': enabled,
                                     "minFee": item["minFee"],
                                     "maxFee": item["maxFee"],
+                                    'outMin': item["minWd"],
+                                    'outMax': item["maxWd"],
+                                    'contract': contract,#[-6:],
                                     # "minFeeForCtAddr": item["minFeeForCtAddr"],
                                     # "maxFeeForCtAddr": item["maxFeeForCtAddr"]
                                 }
                     else:
                         # Если код ответа не 0, выводим сообщение об ошибке
                         self.logger.error("Ошибка при получении данных")
-            except Exception as e:
-                # Если возникает исключение, логируем ошибку
-                self.logger.error(f"Возникла ошибка: {e}")
+        except Exception as e:
+            # Если возникает исключение, логируем ошибку
+            self.logger.error(f"Возникла ошибка: {e}")
         # Возвращаем информацию о валюте
         return currency_info
 
+    async def get_contract_address(self, coin):
+        """
+            Метод который принимает монету и возвращает адресс контракта.
+            :return: адресс контракта.
+        """
+        # Эндпоинт спецеально для создания заголовка.
+        endpoint = f"/api/v5/asset/deposit-address?ccy={coin}"
+        # Создаем сам заголовок.
+        headers = self._create_headers(endpoint=endpoint)
+        url = self.domain + endpoint
+        try:
+            # Делаем запрос
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, headers=headers)
+                data = response.json()
+                # Если ответ не пустой возвращаем значение адресса контракта
+                return data['data']
+                # return data[0]['contract_address'] if data else None
+        except Exception as e:
+            self.logger.error(f"Возникла ошибка: {e} get_contract_address {coin}")
+            return None
     def _create_headers(self, request_type="GET", endpoint="", body=""):
         """
             Специфический метод, который создает берет данные аккаунта, (API) и создает заголовок для запроса
@@ -220,9 +250,8 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
-        per = await okx.get_network_commission("BTC")
+        per = await okx.get_network_commission("JPG")
         print(per)
-        print()
        # print(len(per))
 
 

@@ -135,20 +135,29 @@ async def format_data_ticker(data):
                 message_parts = [f"{exchange_string}\n{'💰 ' + coin.upper()}\n"]
                 for platform, platform_data in coin_data['data'].items():
                     message_parts.append(
-                        f"{platform}: \n💲 Цена = {platform_data['price']} , \n📊 Объем (24h) = {platform_data['vol24']}\nСети:\n"
+                        f"{platform}: \n💲 Цена = {platform_data['price']} , \n📊 Объем (24h) = {platform_data['vol24']}\nСети:"
                     )
                     if 'network' in platform_data and platform_data['network'] is not None:
                         for network, network_data in platform_data['network'].items():
                             if network_data is not None:
                                 fee = network_data.get('maxFee', network_data.get('minFee'))
                                 # Добавляем новые поля в сообщение о сети с новой строки
+                                # Часть кода, где нужно добавить круглешок в начале строки
+                                status = network_data.get('enabled', '-')
+                                status_emoji = '🟢' if status == 'Да' else '🔴' if status == 'Нет' else ''
                                 message_parts.append(
-                                    f"   {network} - \n   Работает: {network_data.get('enabled', 'Данные отсутствуют')}\n"
-                                    f"   Комиссия мин: {network_data.get('minFee', 'Данные отсутствуют')}\n"
-                                    f"   Комиссия макс: {network_data.get('maxFee', 'Данные отсутствуют')}\n"
-                                    f"   Минимальный вывод: {network_data.get('outMin', 'Данные отсутствуют')}\n"
-                                    f"   Максимальный вывод: {network_data.get('outMax', 'Данные отсутствуют')}\n"
-                                    f"   Контракт (6 last): {network_data.get('contract', 'Данные отсутствуют')}\n"
+                                    f"   {status_emoji} {network}\n"
+                                    #f"   {status_emoji} {network} - \n   Работает: {status}\n"
+                                # message_parts.append(
+                                #     f"   {network} - \n   Работает: {network_data.get('enabled', 'Данные отсутствуют')}\n"
+                                    #f"   Комиссия мин: {network_data.get('minFee', 'Данные отсутствуют')}\n"
+                                    #f"   Комиссия макс: {network_data.get('maxFee', 'Данные отсутствуют')}\n"
+                                    f"   Комиссия мин: {'${:.2f}'.format(float(network_data.get('minFee', 0)) * float(platform_data['price'])) if network_data.get('minFee') else 'Данные отсутствуют'}\n"
+                                    f"   Комиссия макс: {'${:.2f}'.format(float(network_data.get('maxFee', 0)) * float(platform_data['price'])) if network_data.get('maxFee') else 'Данные отсутствуют'}\n"
+
+                                    f"   Минимальный вывод: {network_data.get('outMin', '-')}\n"
+                                    f"   Максимальный вывод: {network_data.get('outMax', '-')}\n"
+                                    f"   Контракт (6 last): {network_data.get('contract', '-')}\n"
                                 )
                             else:
                                 message_parts.append(f"   {network} - данные отсутствуют\n")
@@ -233,6 +242,8 @@ async def stop_alerts(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         context.chat_data['ALERT_TASK'] = None
     except Exception as e:
         logger.error(f"Возникла ошибка: {e} функция stop_alert")
+
+
 async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
         Функция которая делает уведомления у нее бесконечный цикл, управляется через переменную
@@ -259,7 +270,7 @@ async def alerts_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 await update.effective_chat.send_message("🌌")
             # Отправляем каждое сообщение с задержкой 2 секунды
             for msg in messages:
-                await update.effective_chat.send_message(msg)
+                await update.effective_chat.send_message(msg,)
                 await asyncio.sleep(2)
             # Пауза в секундах для всего блока уведомлений
             await asyncio.sleep(int(timer))

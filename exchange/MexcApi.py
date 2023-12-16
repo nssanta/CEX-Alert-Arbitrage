@@ -245,7 +245,7 @@ if __name__ == '__main__':
     async def main():
         mexc = MexcApi("Mexc")
         await mexc._load_network_commission()
-        per = await mexc.get_full_info()
+        per = await mexc.get_network_commission('PLCU')
         print(per)
         print()
         print(len(per))

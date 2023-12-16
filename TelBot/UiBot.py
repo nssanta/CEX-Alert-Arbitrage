@@ -69,12 +69,12 @@ def keyboard_setting_spread(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         :return:
     """
     keyboard = [
-        [KeyboardButton("0.5 - 2.5")],
-        [KeyboardButton("0.6 - 2.5")],
-        [KeyboardButton("0.7 - 2.5")],
         [KeyboardButton("0.8 - 2.5")],
-        [KeyboardButton("0.9 - 2.5")],
         [KeyboardButton("1 - 2.5")],
+        [KeyboardButton("1.5 - 2.5")],
+        [KeyboardButton("2 - 2.5")],
+        [KeyboardButton("3 - 5")],
+        [KeyboardButton("5 - 7")],
         [KeyboardButton("Установить вручную")],
         [KeyboardButton("<- назад")],
     ]
