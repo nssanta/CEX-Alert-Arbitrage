@@ -78,7 +78,7 @@ class GateApi(BaseApi):
                     data = response.json()
                     # Преобразуем JSON в словарь
                     pair = coin_pair.lower().replace('_', '')
-                    result_vol = round(float(data[0]["base_volume"]), 2)
+                    result_vol = round(float(data[0]["quote_volume"]), 2)
                     processed_info[pair] = {
                         "coin": coin_pair,
                         "price": data[0]["last"],
@@ -115,105 +115,6 @@ class GateApi(BaseApi):
         except Exception as e:
             self.logger.error(f"Возникла ошибка: {e}")
             return {}
-        # # Эндпоинт куда отправлять запрос
-        # endpoint = f'/api/v4/spot/tickers'
-        # url = self.domain + endpoint
-        # # Словарь с информацией о котировках и объеме
-        # processed_info = {}
-        # # Создаем клиент для асинхронного запроса
-        # async with httpx.AsyncClient() as client:
-        #     try:
-        #         # Выполняем GET-запрос к URL
-        #         response = await client.get(url)
-        #         # Проверяем статус ответа
-        #         if response.status_code == 200:
-        #             # Если статус ответа 200, преобразуем ответ в JSON
-        #             data = response.json()
-        #             for item in data:
-        #                 # Преобразуем JSON в словарь
-        #                 pair = item["currency_pair"].lower().replace('_', '')
-        #                 result_vol = round(float(data[0]["base_volume"]), 2)
-        #                 processed_info[pair] = {
-        #                     "coin": item["currency_pair"],
-        #                     "price": data[0]["last"],
-        #                     "vol24": str(result_vol)
-        #                 }
-        #             return processed_info
-        #         else:
-        #             self.logger.error(f"Ошибка при выполнении запроса: {response.status_code}")
-        #             return {}
-        #     except Exception as e:
-        #         self.logger.error(f"Возникла ошибка: {e}")
-
-    # async def get_network_commission(self, ccy):
-    #     """
-    #         Асинхронная функция для получения информации о валюте с перемоной Класса.
-    #         :param ccy: Валюта, для которой нужно получить информацию.
-    #         :return: Словарь с доступными сетями вывода и минимальными и максимальными комиссиями или None в случае ошибки.
-    #     """
-    #     try:
-    #         # Преобразуем данные в словарь для быстрого доступа
-    #         data_dict = {item['currency']: item for item in self.data_network}
-    #
-    #         # Получаем данные для данной валюты
-    #         currency_data = data_dict.get(ccy)
-    #
-    #         if currency_data is None:
-    #             self.logger.error(f"Возникла ошибка Монета не найдена: get_network_commission {ccy}")
-    #             return {}
-    #
-    #         # Словарь для хранения данных
-    #         commission_data = {}
-    #         withdraw_fix_on_chains = currency_data['withdraw_fix_on_chains']
-    #         for network, fee_data in withdraw_fix_on_chains.items():
-    #             commission_data[network] = {
-    #                 'minFee': fee_data,
-    #                 'maxFee': fee_data
-    #             }
-    #         return commission_data
-    #
-    #     except Exception as e:
-    #         self.logger.error(f"Возникла ошибка: {e} get_network_commission {ccy}")
-    #         return {}
-    # async def get_network_commission(self, ccy):
-    #     """
-    #         Асинхронная функция для получения информации о валюте с перемоной Класса.
-    #         :param ccy: Валюта, для которой нужно получить информацию.
-    #         :return: Словарь с доступными сетями вывода и минимальными и максимальными комиссиями или None в случае ошибки.
-    #     """
-    #     try:
-    #         # Преобразуем данные в словарь для быстрого доступа
-    #         data_dict = {item['currency']: item for item in self.data_network}
-    #
-    #         # Получаем данные для данной валюты
-    #         currency_data = data_dict.get(ccy)
-    #
-    #         if currency_data is None:
-    #             self.logger.error(f"Возникла ошибка Монета не найдена: get_network_commission {ccy}")
-    #             return {}
-    #
-    #         # Убедимся, что currency_data является словарем
-    #         if not isinstance(currency_data, dict):
-    #             currency_data = dict(currency_data)
-    #
-    #         # Словарь для хранения данных
-    #         commission_data = {}
-    #         withdraw_fix_on_chains = currency_data.get('withdraw_fix_on_chains')
-    #
-    #         # Убедимся, что withdraw_fix_on_chains является словарем
-    #         if not isinstance(withdraw_fix_on_chains, dict):
-    #             withdraw_fix_on_chains = dict(withdraw_fix_on_chains)
-    #
-    #         for network, fee_data in withdraw_fix_on_chains.items():
-    #             commission_data[network] = {
-    #                 'minFee': fee_data,
-    #                 'maxFee': fee_data
-    #             }
-    #         return commission_data
-    #
-    #     except Exception as e:
-    #         self.logger.error(f"Возникла ошибка: {e} get_network_commission {ccy}")
-    #         return {}
 
     async def get_network_commission(self, ccy):
         """

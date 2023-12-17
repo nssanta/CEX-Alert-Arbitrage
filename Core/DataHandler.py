@@ -19,10 +19,12 @@ class DataHandler:
         # Переменная, класс который содержит список монет(разбитые монетные пары)
         self.ListCoins = ListCoins()
         # Переменные хранят информацию о диапозоне фильтра
-        self.max_spred = 99.9
-        self.min_spred = 0.1
+        self.max_spred = 2.5
+        self.min_spred = 0.8
+        # Переменная для фильтра по объему.
+        self.rotate_volume = 30000
 
-    def set_min_max_spred(self,min: float, max: float):
+    def set_min_max_spred(self, min: float, max: float):
         """
             Функция устанавливает максимум и минимум диапозона , для фильтра спреда.
             :param max: максимальный процент
@@ -31,6 +33,14 @@ class DataHandler:
         """
         self.min_spred = min
         self.max_spred = max
+    def set_ratate_volume(self, volume: int):
+        """
+            Функция устанавливает максимум и минимум диапозона , для фильтра спреда.
+            :param max: максимальный процент
+            :param min: минимальный процент
+            :return: None
+        """
+        self.rotate_volume = volume
     async def get_common_pairs_and_data(self, apis):
         """
         Функция берет данные для всех монет котировку и объем и находим общиее.
@@ -122,6 +132,53 @@ class DataHandler:
         except Exception as e:
             print(f"Возникла ошибка монета = {pair} a={a}, b={b}, dif = {round(((a - b) / a)*100,4)}: {e} get_exchange_data")
             return {}
+
+    async def get_exchange_data(self, data1, data2, api1, api2):
+        result = {}
+        try:
+            # Обходим все пары, которые присутствуют на обеих биржах
+            for pair in set(data1.keys()) & set(data2.keys()):
+                # Получаем цены и объемы для каждой биржи
+                price1 = float(data1[pair]['price'])
+                price2 = float(data2[pair]['price'])
+                vol1 = float(data1[pair].get('vol24', 0))
+                vol2 = float(data2[pair].get('vol24', 0))
+
+                # Проверяем условия для фильтрации
+                if price1 == 0 or price2 == 0 or vol1 <= self.rotate_volume or vol2 <= self.rotate_volume:
+                    continue  # Пропускаем пару, если не соответствует условиям
+
+                # Вычисляем разницу в процентах между ценами
+                price_diff_percentage = ((price1 - price2) / price1) * 100
+
+                # Проверяем разницу цен и фильтры спреда
+                if not (self.min_spred < price_diff_percentage <= self.max_spred):
+                    continue  # Пропускаем пару, если не соответствует условиям спреда
+
+                # Составляем результат в зависимости от того, с какой биржи цена меньше
+                if price1 < price2:
+                    result[pair] = {
+                        'data': {
+                            api1.name: data1[pair],
+                            api2.name: data2[pair]
+                        },
+                        'dif': round(price_diff_percentage, 4)
+                    }
+                else:
+                    result[pair] = {
+                        'data': {
+                            api2.name: data2[pair],
+                            api1.name: data1[pair]
+                        },
+                        'dif': round(price_diff_percentage, 4)
+                    }
+
+        except Exception as e:
+            # Обработка исключения
+            print(f"Возникла ошибка: {e} get_exchange_data")
+            result = {}  # Сброс результата в случае ошибки
+
+        return result
     async def get_all_exchange_data(self, apis):
         """
         Функция принимает словарь с биржами и преобразует его в словарь с Биржа-Биржа -> монета -> Биржа ....
@@ -280,7 +337,7 @@ class DataHandler:
                 elif "Mexc" in exchang.name:
                     task = asyncio.create_task(exchang.get_one_coin(mexc_pair))
                     tasks.append(task)
-                elif "Gate.io" in exchang.name:
+                elif "Gate_io" in exchang.name:
                     task = asyncio.create_task(exchang.get_one_coin(gateio_pair))
                     tasks.append(task)
             # Запускаем все запросы одновременно
@@ -329,35 +386,24 @@ if __name__ == "__main__":
         bybit = BybitApi("Bybit")
         coinw = CoinWApi("Coin W")
         mexc = MexcApi("Mexc")
-        gate = GateApi("Gate.io")
-
-        # #  дубли для теста
-        # okx2 = OkxApi("Okx2")
-        # bybit2 = BybitApi("Bybit2")
-        # coinw2 = CoinWApi("Coin W2")
+        gate = GateApi("Gate_io")
 
         ex_list = []
-        # ex_list.append(okx)
-        #ex_list.append(bybit)
-
+        #ex_list.append(okx)
         DH = DataHandler("DH")
         await DH.ListCoins.initialize_data()
-
         # print("********** Тест на 2 биржах")
         # test1 = await DH.get_best_ticker(ex_list)
         #
         #ex_list.append(coinw)
-
         # print("********** Тест на 3 биржах")
         # test2 = await DH.get_best_ticker(ex_list)
         #await gate._load_network_commission()
         ex_list.append(mexc)
         ex_list.append(gate)
-
-
-
         print(f"********** Тест на _ биржах spred spisok = {ex_list} = {DH.min_spred} - {DH.max_spred}")
         test3 = await DH.get_best_ticker(ex_list)
+        #test3 = await DH.get_coin_all_exchange(ex_list=ex_list, coin_pair="SSWPUSDT")
         print(test3)
         print(len(test3))
         #newtest = await DH.get_best_ticker_for_all_pairs(ex_list)

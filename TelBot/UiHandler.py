@@ -5,7 +5,8 @@ from telegram.ext import ContextTypes
 from TelBot import UiBot
 from TelBot.CallHandler import stop_alerts, request_quotes, start_alerts
 from TelBot.Variable import SETTING_STATE, TIMER_SETTING_STATE, WORKING_STATE, SPREAD_SETTING_STATE, \
-    INPUT_TIME_SETTING_STATE, INPUT_SPRED_SETTING_STATE, EXCHANGE_SETTING_STATE, INPUT_COINPAIR_SETTING_STATE
+    INPUT_TIME_SETTING_STATE, INPUT_SPRED_SETTING_STATE, EXCHANGE_SETTING_STATE, INPUT_COINPAIR_SETTING_STATE, \
+    VOLUME_SETTING_STATE, INPUT_VOLUME_SETTING_STATE
 
 #   ЛОГИРОВАНИЕ В ФАЙЛ И КОНСОЛЬ!
 log_file = "ui_handler.log"
@@ -96,6 +97,10 @@ async def bh_setting_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text('Выберите или введите время mix-max спреда',
                                                 reply_markup=UiBot.keyboard_setting_spread(update, context))
                 return SPREAD_SETTING_STATE
+            elif text == "Объем":
+                await update.message.reply_text('Выберите объем',
+                                                reply_markup=UiBot.keyboard_setting_volume(update, context))
+                return VOLUME_SETTING_STATE
             elif text == "Биржи":
                 await update.message.reply_text('Выберите биржи',
                                                 reply_markup=UiBot.keyboard_setting_exchange(update, context))
@@ -267,3 +272,61 @@ async def bh_setting_exchange(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     except Exception as e:
         logger.error(f"Возникла ошибка: {e} функция bh_setting_exchange")
+
+async def bh_setting_volume(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция обрабатывает нажатия кнопок в меню настроек объема.
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    try:
+        # Получаем ID пользователя
+        user_id = update.effective_user.id
+        # Получаем список авторизованных пользователей
+        authorized_users = context.bot_data.get('AUTHORIZED_USERS')
+        # Переменая хранит текст отправленый пользователем.
+        text = update.message.text
+
+        if str(user_id) in authorized_users:
+            # Обрабатываем нажатие кнопки в зависимости от ее данных
+            if text == "10000":
+                context.chat_data.get('DH_Class').set_ratate_volume(10000)
+                await update.message.reply_text('Объем изменен',
+                                                reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            elif text == "20000":
+                context.chat_data.get('DH_Class').set_ratate_volume(20000)
+                await update.message.reply_text('Объем изменен',
+                                    reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            elif text == "30000":
+                context.chat_data.get('DH_Class').set_ratate_volume(30000)
+                await update.message.reply_text('Объем изменен',
+                                                reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            elif text == "50000":
+                context.chat_data.get('DH_Class').set_ratate_volume(50000)
+                await update.message.reply_text('Объем изменен',
+                                                reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            elif text == "100000":
+                context.chat_data.get('DH_Class').set_ratate_volume(100000)
+                await update.message.reply_text('Объем изменен',
+                                                reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            elif text == "Установить вручную":
+                await update.message.reply_text('Пожалуйста, введите объем вручную\n'
+                                                'Пример: 15000\n'
+                                                'Еще пример: 230000',
+                                                reply_markup=ReplyKeyboardRemove())
+                return INPUT_VOLUME_SETTING_STATE
+            elif text == "<- назад":
+                await update.message.reply_text('Меню настроек', reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+        else:
+            # Если пользователь не авторизован, отправляем сообщение об ошибке
+            await update.message.reply_text('Извините, вы не авторизованы для использования этого меню',
+                                            reply_markup=ReplyKeyboardRemove())
+    except Exception as e:
+        logger.error(f"Возникла ошибка: {e} функция bh_setting_volume")

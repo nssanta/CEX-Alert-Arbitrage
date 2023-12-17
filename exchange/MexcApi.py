@@ -93,7 +93,7 @@ class MexcApi(BaseApi):
                         processed_info = {}
                         try:
                             pair = coin_pair.lower().replace('_', '')
-                            result_vol = round(float(data_info["volume"]), 2)
+                            result_vol = round(float(data_info["amount"]), 2)
                             processed_info[pair] = {
                                 "coin": coin_pair,
                                 "price": data_info["last"],
@@ -245,7 +245,7 @@ if __name__ == '__main__':
     async def main():
         mexc = MexcApi("Mexc")
         await mexc._load_network_commission()
-        per = await mexc.get_network_commission('PLCU')
+        per = await mexc.get_network_commission('SSWP')
         print(per)
         print()
         print(len(per))

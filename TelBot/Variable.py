@@ -45,8 +45,8 @@ WhiteList = [
     '1271372091',
 ]
 # Пароль
-PASSWORD = "A"
-#PASSWORD = os.getenv('bot_pass')
+#PASSWORD = "A"
+PASSWORD = os.getenv('bot_pass')
 
 # Состояния диалога
 PASS_STATE = 0                      # Авторизация
@@ -59,6 +59,8 @@ INPUT_TIME_SETTING_STATE = 6        # Состояние ручного ввод
 INPUT_SPRED_SETTING_STATE = 7       # Состояние ручного ввода интервала для таймера
 EXCHANGE_SETTING_STATE = 8          # Состояние выбора бирж для фильтра
 INPUT_COINPAIR_SETTING_STATE = 9    # Состояние ввода пользователем монетной пары
+VOLUME_SETTING_STATE = 10           # Состояние ввода выбора объема
+INPUT_VOLUME_SETTING_STATE = 11     # Состояние ввода объема в ручную
 
 
 async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYPE):

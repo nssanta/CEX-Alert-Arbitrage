@@ -33,6 +33,7 @@ def keyboard_setting_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     keyboard = [
         [KeyboardButton("Таймер")],
         [KeyboardButton("Спред")],
+        [KeyboardButton("Объем")],
         [KeyboardButton("Биржи")],
         [KeyboardButton("<- назад")],
     ]
@@ -99,3 +100,23 @@ def keyboard_setting_exchange(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     return reply_markup
 
+def keyboard_setting_volume(update: Update, context: ContextTypes.DEFAULT_TYPE) -> ReplyKeyboardMarkup:
+    """
+        Функция возвращает клавиатуру главного окна настроек.
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    keyboard = [
+        [KeyboardButton("10000")],
+        [KeyboardButton("20000")],
+        [KeyboardButton("30000")],
+        [KeyboardButton("50000")],
+        [KeyboardButton("100000")],
+        [KeyboardButton("Установить вручную")],
+        [KeyboardButton("<- назад")],
+    ]
+    # Создаем разметку для клавиатуры
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+    return reply_markup

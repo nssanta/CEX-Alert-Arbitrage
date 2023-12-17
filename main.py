@@ -10,8 +10,8 @@ from telegram.ext import filters, Application, CommandHandler, ContextTypes, Mes
 from TelBot import UiHandler, CallHandler, Variable, UiBot
 
 
-#TOKEN = os.getenv('bot_token')
-TOKEN = "os.getenv('TELEGRAM_BOT_TOKEN')"
+TOKEN = os.getenv('bot_token')
+#TOKEN = "os.getenv('TELEGRAM_BOT_TOKEN')"
 #______________________________________________________________________________________________________________________
 
 # # Вывод логирования в терминал
@@ -92,8 +92,8 @@ def main() -> None:
             Variable.WORKING_STATE: [MessageHandler(filters.Regex('^Запустить оповещения$|^Остановить оповещения$|'
                                                          '^Настройки$|^Запросить котировки$'), UiHandler.bh_start_menu)],
 
-            Variable.SETTING_STATE: [MessageHandler(filters.Regex('^Таймер$|^Спред$|^Биржи$|'
-                                                         '^Монеты$|^<- назад$'), UiHandler.bh_setting_menu)],
+            Variable.SETTING_STATE: [MessageHandler(filters.Regex('^Таймер$|^Спред$|^Объем$|'
+                                                         '|^Биржи$|^<- назад$'), UiHandler.bh_setting_menu)],
 
             Variable.TIMER_SETTING_STATE: [MessageHandler(filters.Regex('^30 секунд$|^1 минута$|'
             '^2 минуты$|^5 минут$|^10 минут$|^Установить вручную$|^<- назад$'), UiHandler.bh_setting_timer)],
@@ -111,6 +111,13 @@ def main() -> None:
 
             Variable.INPUT_COINPAIR_SETTING_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
                                                                 CallHandler.input_coin_pair)],
+
+            Variable.VOLUME_SETTING_STATE: [MessageHandler(filters.Regex('^10000$|^20000$|^30000$|'
+            '^50000$|^100000$|^Установить вручную$|^<- назад$'), UiHandler.bh_setting_volume)],
+
+            Variable.INPUT_VOLUME_SETTING_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
+                                                                CallHandler.input_volume)],
+
         },
         fallbacks=[CommandHandler('help', help_command)],# заменить на что то более нужное в данном случае
     )

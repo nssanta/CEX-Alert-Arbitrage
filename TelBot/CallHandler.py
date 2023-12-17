@@ -387,4 +387,38 @@ async def input_coin_pair(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                                         f'2) Попробуйте отключить какую-нибудь биржу(биржи)',
                                         reply_markup=UiBot.keyboard_start_menu(update, context))
         return WORKING_STATE
+
+async def input_volume(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция проверяет текст введеный пользователем для установки таймера
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    try:
+        # Получаем ID пользователя
+        user = update.effective_user.id
+        # Получаем ответ пользователя
+        text = update.message.text
+        if text.isdigit():
+            number = int(text)
+            # Проверяем диапозон от 1 - 1000000000000
+            if 1 <= number <= 1000000000000:
+                context.chat_data.get('DH_Class').set_ratate_volume(number)
+                await update.message.reply_text(f'Объем установлен на {number}'
+                                                f'\nНе забудьте Отключить и Включить уведомления заново!!!',
+                                                reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+            else:
+                await update.message.reply_text(f'Не возможно установить объем на {number} \n'
+                                                f'Правильный диапозон от 1 секунд до 1000000000000 !!!',
+                                                reply_markup=UiBot.keyboard_setting_menu(update, context))
+                return SETTING_STATE
+
+        else:
+            await update.message.reply_text(f'Число должно быть целым и без лишних знаков\nВведите целое число!!!',
+                                            reply_markup=UiBot.keyboard_setting_menu(update, context))
+            return SETTING_STATE
+    except Exception as e:
+        logger.error(f"Возникла ошибка: {e} функция input_volume")
 #_______________________________________________________________________________________________________________________
