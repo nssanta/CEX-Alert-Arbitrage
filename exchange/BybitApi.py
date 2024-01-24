@@ -10,7 +10,7 @@ from pybit.unified_trading import HTTP
 import httpx
 
 class BybitApi(BaseApi):
-    def __init__(self, name ="Okx"):
+    def __init__(self, name ="Bybit"):
         # Создаем логгер, используя суперкласс
         super().__init__(log_file="bybit_api.log",logger="BybitApi")
         # Имя экземпляра класса

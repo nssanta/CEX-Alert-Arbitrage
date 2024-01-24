@@ -1,3 +1,4 @@
+import json
 import time
 
 import httpx
@@ -267,6 +268,9 @@ class ListCoins:
 
         return "Монета не найдена"
 
+    def save_dict_to_file(self, data, filename):
+        with open(filename, 'w') as file:
+            json.dump(data, file, indent=4)
 
 if __name__ == "__main__":
     st = time.time()
@@ -278,6 +282,7 @@ if __name__ == "__main__":
     # print(aa)
 
     lol = asyncio.run(your_class._merge_data())
+    your_class.save_dict_to_file(lol,'coins.json')
     print(lol)
     print()
     print(len(lol))
