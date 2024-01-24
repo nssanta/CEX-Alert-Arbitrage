@@ -65,73 +65,54 @@ class DataHandler:
         #print(f'Функция get_common_pairs_and_data отработала за {end_time - start_time}')
         return common_pairs, all_data
 
-    async def get_exchange_data(self, data1, data2, api1, api2):
-        """
-            Функция обходит все значения двух словарей и вычисляет разницу котировок.
-            :param data1: Данные первой биржи
-            :param data2: Данные второй биржи
-            :param api1: Имя первой биржи
-            :param api2: Имя второй биржи
-            :return: Вернет словарь с данными, где будет добавлен ключ с разницой в процентах
-        """
-        #start_time = time.time()
-        # Создаем словарь для хранения результата
-        result = {}
-        try:
-            # Обходим все пары в данных
-            for pair in data1.keys():
-                # Если пара есть в обоих словарях
-                if pair in data2:
-                    # Вычисляем разницу в котировках
-                    a = float(data1[pair]['price'])
-                    b = float(data2[pair]['price'])
-                    if a != 0 and b != 0:
-                        dif = ((a - b) / a) * 100
-                        # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
-                        if self.min_spred < dif <= self.max_spred:
-                            if a < b:
-                                result[pair] = {
-                                    'data': {
-                                        api1.name: data1[pair],
-                                        api2.name: data2[pair]
-                                    },
-                                    'dif': round(dif, 4)
-                                }
-                            else:
-                                result[pair] = {
-                                    'data': {
-                                        api2.name: data2[pair],
-                                        api1.name: data1[pair]
-                                    },
-                                    'dif': round(dif, 4)
-                                }
-                    else:
-                        print(f" a == pair = {pair} datapair1 = {data1[pair]} price = {float(data1[pair]['price'])} ")
-                        print(f"b == pair = {pair} datapair2 = {data2[pair]} price = {float(data2[pair]['price'])} ")
-            #end_time = time.time()
-            #print(f'Функция get_exchange_data отработала за {end_time - start_time}')
-            # diff_counts = {}
-            # for pair, info in result.items():
-            #     diff = info['dif']
-            #     diff = round(diff)  # Округляем до целого процента
-            #     if diff not in diff_counts:
-            #         diff_counts[diff] = 0
-            #     diff_counts[diff] += 1
-            #
-            # print("Словарь с процентами разницы и количеством соответствующих пар:")
-            # total_diffs = 0
-            # total_pairs = 0
-            # for diff, count in diff_counts.items():
-            #     print(f"{diff}%: {count} pair(s)")
-            #     total_diffs += 1
-            #     total_pairs += count
-            #
-            # print(f"Общее количество процентов: {total_diffs}")
-            # print(f"Общее количество пар: {total_pairs}")
-            return result
-        except Exception as e:
-            print(f"Возникла ошибка монета = {pair} a={a}, b={b}, dif = {round(((a - b) / a)*100,4)}: {e} get_exchange_data")
-            return {}
+    # async def get_exchange_data(self, data1, data2, api1, api2):
+    #     """
+    #         Функция обходит все значения двух словарей и вычисляет разницу котировок.
+    #         :param data1: Данные первой биржи
+    #         :param data2: Данные второй биржи
+    #         :param api1: Имя первой биржи
+    #         :param api2: Имя второй биржи
+    #         :return: Вернет словарь с данными, где будет добавлен ключ с разницой в процентах
+    #     """
+    #     #start_time = time.time()
+    #     # Создаем словарь для хранения результата
+    #     result = {}
+    #     try:
+    #         # Обходим все пары в данных
+    #         for pair in data1.keys():
+    #             # Если пара есть в обоих словарях
+    #             if pair in data2:
+    #                 # Вычисляем разницу в котировках
+    #                 a = float(data1[pair]['price'])
+    #                 b = float(data2[pair]['price'])
+    #                 if a != 0 and b != 0:
+    #                     dif = ((a - b) / a) * 100
+    #                     # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
+    #                     if self.min_spred < dif <= self.max_spred:
+    #                         if a < b:
+    #                             result[pair] = {
+    #                                 'data': {
+    #                                     api1.name: data1[pair],
+    #                                     api2.name: data2[pair]
+    #                                 },
+    #                                 'dif': round(dif, 4)
+    #                             }
+    #                         else:
+    #                             result[pair] = {
+    #                                 'data': {
+    #                                     api2.name: data2[pair],
+    #                                     api1.name: data1[pair]
+    #                                 },
+    #                                 'dif': round(dif, 4)
+    #                             }
+    #                 else:
+    #                     print(f" a == pair = {pair} datapair1 = {data1[pair]} price = {float(data1[pair]['price'])} ")
+    #                     print(f"b == pair = {pair} datapair2 = {data2[pair]} price = {float(data2[pair]['price'])} ")
+    #
+    #         return result
+    #     except Exception as e:
+    #         print(f"Возникла ошибка монета = {pair} a={a}, b={b}, dif = {round(((a - b) / a)*100,4)}: {e} get_exchange_data")
+    #         return {}
 
     async def get_exchange_data(self, data1, data2, api1, api2):
         result = {}
@@ -152,7 +133,9 @@ class DataHandler:
                 price_diff_percentage = ((price1 - price2) / price1) * 100
 
                 # Проверяем разницу цен и фильтры спреда
-                if not (self.min_spred < price_diff_percentage <= self.max_spred):
+               #if not (self.min_spred < price_diff_percentage <= self.max_spred):
+                print(f'{self.min_spred} {abs(price_diff_percentage)} {self.max_spred}')
+                if not self.min_spred < abs(price_diff_percentage) <= self.max_spred:
                     continue  # Пропускаем пару, если не соответствует условиям спреда
 
                 # Составляем результат в зависимости от того, с какой биржи цена меньше
@@ -162,7 +145,7 @@ class DataHandler:
                             api1.name: data1[pair],
                             api2.name: data2[pair]
                         },
-                        'dif': round(price_diff_percentage, 4)
+                        'dif': abs(round(price_diff_percentage, 4))
                     }
                 else:
                     result[pair] = {
@@ -170,7 +153,7 @@ class DataHandler:
                             api2.name: data2[pair],
                             api1.name: data1[pair]
                         },
-                        'dif': round(price_diff_percentage, 4)
+                        'dif': abs(round(price_diff_percentage, 4))
                     }
 
         except Exception as e:
@@ -309,6 +292,12 @@ class DataHandler:
     #     return all_exchange_data
 
     async def get_coin_all_exchange(self, ex_list, coin_pair):
+        '''
+        Функция для "Запросить котировки"
+        :param ex_list:
+        :param coin_pair:
+        :return:
+        '''
         try:
             # Разделяем монетную пару
             onecoin = await self.ListCoins.get_first_coin(coin_pair.upper())
