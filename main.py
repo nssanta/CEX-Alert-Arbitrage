@@ -10,8 +10,8 @@ from telegram.ext import filters, Application, CommandHandler, ContextTypes, Mes
 from TelBot import UiHandler, CallHandler, Variable, UiBot
 
 
-#TOKEN = os.getenv('bot_token')
-TOKEN = "os.getenv('TELEGRAM_BOT_TOKEN')"
+TOKEN = os.getenv('bot_token')
+#TOKEN = "os.getenv('TELEGRAM_BOT_TOKEN')"
 #______________________________________________________________________________________________________________________
 
 # # Вывод логирования в терминал
@@ -90,7 +90,7 @@ def main() -> None:
             Variable.AUTH_STATE: [CommandHandler('passauth', passauth)],
 
             Variable.WORKING_STATE: [MessageHandler(filters.Regex('^Запустить оповещения$|^Остановить оповещения$|'
-                                                         '^Настройки$|^Запросить котировки$'), UiHandler.bh_start_menu)],
+                                                         '^Настройки$|^Установить баланс$|^Запросить котировки$'), UiHandler.bh_start_menu)],
 
             Variable.SETTING_STATE: [MessageHandler(filters.Regex('^Таймер$|^Спред$|^Объем$|'
                                                          '|^Биржи$|^<- назад$'), UiHandler.bh_setting_menu)],
@@ -117,6 +117,9 @@ def main() -> None:
 
             Variable.INPUT_VOLUME_SETTING_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
                                                                 CallHandler.input_volume)],
+
+            Variable.INPUT_BALANCE_FOR_ARB: [MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REPLY,
+                                                                CallHandler.input_balance)],
 
         },
         fallbacks=[CommandHandler('help', help_command)],# заменить на что то более нужное в данном случае

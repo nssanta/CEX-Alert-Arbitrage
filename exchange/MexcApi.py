@@ -16,7 +16,7 @@ class MexcApi(BaseApi):
         # Переменная для имени экземпляра класса
         self.name = name
         # Активирована или нет , для бота в тг
-        self.is_selected = False
+        self.is_selected = True
         # Специфичная переменая для хранения данных сетей и коммисии монет! около 8 тысяч
         self.data_network = None
         # Переменная для ссылки на api (сайт)
@@ -237,6 +237,27 @@ class MexcApi(BaseApi):
             self.logger.error(f"Возникла ошибка: {e} __create_headers")
             return [], ""
 
+    async def get_order_book(self, pairs, limit=10):
+        '''
+        Функция для получения книги ордеров для монетной пары (стандартно для 10 стаканов)
+        :param self:
+        :param pairs: монетная пара
+        :return:
+        '''
+        # headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        #endpoint = f'/api/v3/depth?symbol={pairs}'
+        #endpoint = f'/api/v3/ticker/bookTicker?symbol={pairs}'
+
+        url = url = f"https://api.mexc.com/api/v3/depth?symbol={pairs}&limit={limit}"
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, )#headers=headers)
+                data = response.json()
+                return data
+        except Exception as e:
+            self.logger.error(f"Возникла ошибка: {e} в функции get_order_book")
+
 
 if __name__ == '__main__':
     start_time = time.time()
@@ -244,12 +265,14 @@ if __name__ == '__main__':
 
     async def main():
         mexc = MexcApi("Mexc")
-        await mexc._load_network_commission()
-        per = await mexc.get_network_commission('SSWP')
+        #await mexc._load_network_commission()
+        per = await mexc.get_order_book('SOILUSDT')
         print(per)
         print()
         print(len(per))
 
+        monets = temp_test.calculate_sum_of_order_book(per, 1000, 'Buy')
+        print(f'MONET = {monets}')
 
     import asyncio
 

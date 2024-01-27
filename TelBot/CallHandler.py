@@ -163,7 +163,7 @@ async def format_data_ticker(data):
                                 message_parts.append(f"   {network} - данные отсутствуют\n")
                     else:
                         message_parts.append("   Данные о сети отсутствуют\n")
-                message_parts.append(f"\n🎯 Разница цен: {coin_data['dif']}%\n")
+                message_parts.append(f"\n🎯 Разница цен: {coin_data['dif']}\n")
                 messages.append('\n'.join(message_parts))  # Объединяем все части сообщения с новой строки
         return messages
 
@@ -419,6 +419,30 @@ async def input_volume(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             await update.message.reply_text(f'Число должно быть целым и без лишних знаков\nВведите целое число!!!',
                                             reply_markup=UiBot.keyboard_setting_menu(update, context))
             return SETTING_STATE
+    except Exception as e:
+        logger.error(f"Возникла ошибка: {e} функция input_volume")
+
+async def input_balance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+        Функция устанавливает баланс для арбитража
+        :param update: Объект Update, содержащий информацию о текущем обновлении.
+        :param context: Объект Context, содержащий информацию о текущем контексте.
+        :return:
+    """
+    try:
+        # Получаем ID пользователя
+        user = update.effective_user.id
+        # Получаем ответ пользователя
+        text = update.message.text
+        if text.isdigit():
+            number = int(text)
+            if 1 <= number <= 1000000:
+                context.chat_data.get('DH_Class').set_balance_arbitration(number)
+                await update.message.reply_text(f'Баланс установлен {number}'
+                                                f'\nНе забудьте Отключить и Включить уведомления заново!!!',
+                                                reply_markup=UiBot.keyboard_start_menu(update, context))
+                return WORKING_STATE
+
     except Exception as e:
         logger.error(f"Возникла ошибка: {e} функция input_volume")
 #_______________________________________________________________________________________________________________________

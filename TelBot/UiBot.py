@@ -17,6 +17,7 @@ def keyboard_start_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> R
             KeyboardButton("Остановить оповещения", ),
         ],
         [KeyboardButton("Настройки")],
+        [KeyboardButton("Установить баланс")],
         [KeyboardButton("Запросить котировки", )],
     ]
     # Создаем разметку для клавиатуры

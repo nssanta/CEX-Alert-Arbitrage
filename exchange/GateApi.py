@@ -157,7 +157,7 @@ class GateApi(BaseApi):
             return commission_data
 
         except Exception as e:
-            self.logger.error(f"Возникла ошибка Монета не найдена: {e} get_network_commission {ccy}")
+            self.logger.error(f"Возникла ошибка Монета не найдена: {e} get_network_commission {ccy} data = {currency_data}")
             return {}
 
     async def get_contract_address(self, coin):
@@ -225,6 +225,24 @@ class GateApi(BaseApi):
 
         return {'KEY': self.api_key, 'Timestamp': timestamp, 'SIGN': signature}
 
+    async def get_order_book(self, pairs):
+        '''
+        Функция для получения книги ордеров для монетной пары (стандартно для 10 стаканов)
+        :param self:
+        :param pairs: монетная пара
+        :return:
+        '''
+
+        endpoint = f'/api/v4/spot/order_book?currency_pair={pairs}'
+        url = self.domain + endpoint
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, headers=headers)
+                data = response.json()
+                return data
+        except Exception as e:
+            self.logger.error(f"Возникла ошибка: {e} в функции get_order_book")
 
 
 
@@ -232,9 +250,12 @@ if __name__ == "__main__":
     async def main():
         ga = GateApi("Gate.io")
         #await ga._load_network_commission()
-        full = await ga.get_full_info()
+        full = await ga.get_order_book('SOIL_USDT')
         print(full)
         print(len(full))
+
+        monets = temp_test.calculate_sum_of_order_book(full, 1900, 'Sell')
+        print(f'MONET = {monets}')
 
 
 

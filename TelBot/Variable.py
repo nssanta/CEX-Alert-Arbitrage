@@ -45,8 +45,8 @@ WhiteList = [
     '1271372091',
 ]
 # Пароль
-PASSWORD = "A"
-#PASSWORD = os.getenv('bot_pass')
+#PASSWORD = "A"
+PASSWORD = os.getenv('bot_pass')
 
 # Состояния диалога
 PASS_STATE = 0                      # Авторизация
@@ -61,6 +61,7 @@ EXCHANGE_SETTING_STATE = 8          # Состояние выбора бирж �
 INPUT_COINPAIR_SETTING_STATE = 9    # Состояние ввода пользователем монетной пары
 VOLUME_SETTING_STATE = 10           # Состояние ввода выбора объема
 INPUT_VOLUME_SETTING_STATE = 11     # Состояние ввода объема в ручную
+INPUT_BALANCE_FOR_ARB = 12          # Состояние для ввода баланса
 
 
 async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -86,15 +87,15 @@ async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYP
         context.chat_data.setdefault('TIMER_ALERT', 60)
         # Переменная которая будет хранить список бирж
         context.chat_data.setdefault('Okx', OkxApi("Okx"))
-        context.chat_data.setdefault('Bybit', BybitApi("Bybit"))
-        context.chat_data.setdefault('Coin W', CoinWApi("Coin W"))
+        # context.chat_data.setdefault('Bybit', BybitApi("Bybit"))
+        # context.chat_data.setdefault('Coin W', CoinWApi("Coin W"))
         context.chat_data.setdefault('Mexc', MexcApi("Mexc"))
         context.chat_data.setdefault('Gate_io', GateApi("Gate_io"))
 
         context.chat_data.setdefault('EXCHANGE_LIST', [
             context.chat_data.get('Okx'),
-            context.chat_data.get('Bybit'),
-            context.chat_data.get('Coin W'),
+            # context.chat_data.get('Bybit'),
+            # context.chat_data.get('Coin W'),
             context.chat_data.get('Mexc'),
             context.chat_data.get('Gate_io'),
 

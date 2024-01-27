@@ -8,9 +8,9 @@ from datetime import datetime, timezone
 import httpx
 import logging
 
+import numpy as np
 from exchange.BaseApi import BaseApi
-import okx.MarketData as MarketData
-import okx.Account as Account
+
 
 class OkxApi(BaseApi):
     def __init__(self, name ="Okx"):
@@ -23,8 +23,8 @@ class OkxApi(BaseApi):
         # Переменная для ссылки на api (сайт)
         self.domain = "https://www.okx.com"
         # Данные для Авторизации
-        self.api_key = 'be0263b3-e366-4df4-91aa-01ac1e431b5a'
-        self.secret_key = '752444EDE261ADF4EA58E24C3B553644'
+        self.api_key = '0eedac92-2d75-4a59-8586-22cf2abe780b'
+        self.secret_key = 'A7E52EA80680BFE6DB355A4A6BC280CC'
         self.passphrase = '@SuperSanta1995'
 
     async def get_one_coin(self, coin_pair):
@@ -103,7 +103,7 @@ class OkxApi(BaseApi):
                         break
                 except Exception as e:
                     # Если возникает исключение, логируем ошибку и прерываем цикл
-                    self.logger.error(f"Возникла ошибка: {e}")
+                    self.logger.error(f"Возникла ошибка: {e} в get_full_info")
                     break
         # Возвращаем список тикеров
         return tickers
@@ -136,7 +136,7 @@ class OkxApi(BaseApi):
                     "vol24": str(resultvol),
                 }
             except Exception as e:
-                self.logger.error(f"Возникла ошибка: {e}")
+                self.logger.error(f"Возникла ошибка: {e} в get_coins_price_vol ")
         # Возвращаем обработанную информацию
         return processed_info
     async def get_network_commission(self,ccy):
@@ -173,6 +173,8 @@ class OkxApi(BaseApi):
                                 for contr in contract_data:
                                     if contr['chain'] == item["chain"]:
                                         contract = contr["ctAddr"]
+                                    else:
+                                        contract = None
                                 currency_info[item["chain"]] = {
                                     'enabled': enabled,
                                     "minFee": item["minFee"],
@@ -243,15 +245,42 @@ class OkxApi(BaseApi):
         # Возврат сформированных заголовков
         return headers
 
+    async def get_order_book(self, pair, book_depth=10):
+        '''
+        Функция для запроса стаканов
+        :param instrument_id:
+        :param order_book_depth:
+        :return:
+        '''
+        # Определите URL конечной точки
+        endpoint = f"/api/v5/market/books?instId={pair}&sz={book_depth}"
 
+        # Составьте URL запроса с параметрами
+        url = self.domain + endpoint
+
+        # Настройте заголовки запроса при необходимости
+        headers = {
+            "Content-Type": "application/json",
+            # Добавьте другие заголовки по мере необходимости
+        }
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, headers=headers)
+                data = response.json()
+                return data['data'][0]
+        except Exception as e:
+            self.logger.error(f"Возникла ошибка: {e} функция get_order_book")
 
 
 if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
-        per = await okx.get_network_commission("JPG")
-        print(per)
+        # per = await okx.get_full_info()
+        # print(per)
+        order = await okx.get_order_book('BTC-USDC')
+        print(order)
+
        # print(len(per))
 
 

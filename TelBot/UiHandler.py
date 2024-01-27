@@ -6,7 +6,7 @@ from TelBot import UiBot
 from TelBot.CallHandler import stop_alerts, request_quotes, start_alerts
 from TelBot.Variable import SETTING_STATE, TIMER_SETTING_STATE, WORKING_STATE, SPREAD_SETTING_STATE, \
     INPUT_TIME_SETTING_STATE, INPUT_SPRED_SETTING_STATE, EXCHANGE_SETTING_STATE, INPUT_COINPAIR_SETTING_STATE, \
-    VOLUME_SETTING_STATE, INPUT_VOLUME_SETTING_STATE
+    VOLUME_SETTING_STATE, INPUT_VOLUME_SETTING_STATE, INPUT_BALANCE_FOR_ARB
 
 #   ЛОГИРОВАНИЕ В ФАЙЛ И КОНСОЛЬ!
 log_file = "ui_handler.log"
@@ -61,6 +61,9 @@ async def bh_start_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text('Выберите опцию настройки',
                                                 reply_markup=UiBot.keyboard_setting_menu(update, context))
                 return SETTING_STATE
+            elif text == "Установить баланс":
+                await update.message.reply_text('Пожалуйста введите ваш баланс ', reply_markup=ReplyKeyboardRemove())
+                return INPUT_BALANCE_FOR_ARB
             elif text == "Запросить котировки":
                 await update.message.reply_text('Пожалуйста введите монетную в формате coincoin\n'
                                                 'Две монеты слитно и без лишних знаков\n'

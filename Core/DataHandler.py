@@ -2,6 +2,7 @@ import asyncio
 import sys
 import time
 import traceback
+import numpy as np
 
 import TelBot.CallHandler
 from Data.ListCoins import ListCoins
@@ -19,10 +20,19 @@ class DataHandler:
         # Переменная, класс который содержит список монет(разбитые монетные пары)
         self.ListCoins = ListCoins()
         # Переменные хранят информацию о диапозоне фильтра
-        self.max_spred = 2.5
-        self.min_spred = 0.8
+        self.max_spred = 100.0
+        self.min_spred = 1.0
         # Переменная для фильтра по объему.
-        self.rotate_volume = 30000
+        self.rotate_volume = 1
+        # Переменная для хранения, баланса на основе которого считается спред из стаканов
+        self.balanca_arbitration = 1000
+    def set_balance_arbitration(self, balance):
+        '''
+        Функция меняет сам баланс
+        :param balance:
+        :return:
+        '''
+        self.balanca_arbitration = balance
 
     def set_min_max_spred(self, min: float, max: float):
         """
@@ -65,56 +75,15 @@ class DataHandler:
         #print(f'Функция get_common_pairs_and_data отработала за {end_time - start_time}')
         return common_pairs, all_data
 
-    # async def get_exchange_data(self, data1, data2, api1, api2):
-    #     """
-    #         Функция обходит все значения двух словарей и вычисляет разницу котировок.
-    #         :param data1: Данные первой биржи
-    #         :param data2: Данные второй биржи
-    #         :param api1: Имя первой биржи
-    #         :param api2: Имя второй биржи
-    #         :return: Вернет словарь с данными, где будет добавлен ключ с разницой в процентах
-    #     """
-    #     #start_time = time.time()
-    #     # Создаем словарь для хранения результата
-    #     result = {}
-    #     try:
-    #         # Обходим все пары в данных
-    #         for pair in data1.keys():
-    #             # Если пара есть в обоих словарях
-    #             if pair in data2:
-    #                 # Вычисляем разницу в котировках
-    #                 a = float(data1[pair]['price'])
-    #                 b = float(data2[pair]['price'])
-    #                 if a != 0 and b != 0:
-    #                     dif = ((a - b) / a) * 100
-    #                     # Добавляем данные в словарь, если разница в процентах находится в нужном диапазоне
-    #                     if self.min_spred < dif <= self.max_spred:
-    #                         if a < b:
-    #                             result[pair] = {
-    #                                 'data': {
-    #                                     api1.name: data1[pair],
-    #                                     api2.name: data2[pair]
-    #                                 },
-    #                                 'dif': round(dif, 4)
-    #                             }
-    #                         else:
-    #                             result[pair] = {
-    #                                 'data': {
-    #                                     api2.name: data2[pair],
-    #                                     api1.name: data1[pair]
-    #                                 },
-    #                                 'dif': round(dif, 4)
-    #                             }
-    #                 else:
-    #                     print(f" a == pair = {pair} datapair1 = {data1[pair]} price = {float(data1[pair]['price'])} ")
-    #                     print(f"b == pair = {pair} datapair2 = {data2[pair]} price = {float(data2[pair]['price'])} ")
-    #
-    #         return result
-    #     except Exception as e:
-    #         print(f"Возникла ошибка монета = {pair} a={a}, b={b}, dif = {round(((a - b) / a)*100,4)}: {e} get_exchange_data")
-    #         return {}
-
     async def get_exchange_data(self, data1, data2, api1, api2):
+        """
+        Функция обходит все значения двух словарей и вычисляет разницу котировок.
+        :param data1: Данные первой биржи
+        :param data2: Данные второй биржи
+        :param api1: Имя первой биржи
+        :param api2: Имя второй биржи
+        :return: Вернет словарь с данными, где будет добавлен ключ с разницой в процентах
+        """
         result = {}
         try:
             # Обходим все пары, которые присутствуют на обеих биржах
@@ -133,27 +102,66 @@ class DataHandler:
                 price_diff_percentage = ((price1 - price2) / price1) * 100
 
                 # Проверяем разницу цен и фильтры спреда
-               #if not (self.min_spred < price_diff_percentage <= self.max_spred):
-                print(f'{self.min_spred} {abs(price_diff_percentage)} {self.max_spred}')
                 if not self.min_spred < abs(price_diff_percentage) <= self.max_spred:
                     continue  # Пропускаем пару, если не соответствует условиям спреда
 
+#-----------------------------------------------------------------------------------------------------------------------
+                # Создаем список корутин для каждой функции
+                tasks = []
+
+                if api1.name == 'Mexc':
+                    coin_mex = data1[pair]['coin'].replace("_", "")
+                    tasks.append(api1.get_order_book(coin_mex))
+                elif api1.name == 'Okx':
+                    coin_okx = data1[pair]['coin']
+                    tasks.append(api1.get_order_book(coin_okx))
+                elif api1.name == 'Gate_io':
+                    coin_gate = data1[pair]['coin']
+                    tasks.append(api1.get_order_book(coin_gate))
+
+                if api2.name == 'Mexc':
+                    coin_mex = data2[pair]['coin'].replace("_", "")
+                    tasks.append(api2.get_order_book(coin_mex))
+                elif api2.name == 'Okx':
+                    coin_okx = data2[pair]['coin']
+                    tasks.append(api2.get_order_book(coin_okx))
+                elif api2.name == 'Gate_io':
+                    coin_gate = data2[pair]['coin']
+                    tasks.append(api2.get_order_book(coin_gate))
+
+                # Запускаем функции параллельно
+                book_api_1, book_api_2 = await asyncio.gather(*tasks)
+
                 # Составляем результат в зависимости от того, с какой биржи цена меньше
                 if price1 < price2:
+
+                    summ, procent = self.different_price_of_order_book(book_api_1, book_api_2, self.balanca_arbitration)
+                    if summ == None:  # проверка есть ли стаканы
+                        continue
+                    if summ < self.balanca_arbitration:  # проверка растет ли баланс
+                        continue
+
                     result[pair] = {
                         'data': {
                             api1.name: data1[pair],
                             api2.name: data2[pair]
                         },
-                        'dif': abs(round(price_diff_percentage, 4))
+                        'dif': f'{abs(round(price_diff_percentage, 4))} \n Процент стаканов: {round(procent)} \n Сумм без комм: {summ}'
                     }
                 else:
+
+                    summ, procent = self.different_price_of_order_book(book_api_2, book_api_1, self.balanca_arbitration)
+                    if summ == None: # проверка есть ли стаканы
+                        continue
+                    if summ < self.balanca_arbitration: # проверка растет ли баланс
+                        continue
+
                     result[pair] = {
                         'data': {
                             api2.name: data2[pair],
                             api1.name: data1[pair]
                         },
-                        'dif': abs(round(price_diff_percentage, 4))
+                        'dif': f'{abs(round(price_diff_percentage, 4))} \n Процент стаканов: {procent} \n Сумм без комм: {summ}'
                     }
 
         except Exception as e:
@@ -353,6 +361,78 @@ class DataHandler:
             return final_results
         except Exception as e:
             print(e)
+
+    def culculate_summ_of_order_book(self, order_book, summ, action):
+        '''
+        Функция считает сколько можно купить монет по стаканам на переданную сумму.
+        :param order_book: книга ордеров
+        :param summ: сумма
+        :param action: действие ('Buy' или 'Sell')
+        :return: количество монет
+        '''
+        # Преобразование суммы в числовой формат
+        summ = np.float64(summ)
+        # Инициализация переменной для хранения общего количества монет
+        total = 0
+
+        # Выбор стаканов в зависимости от действия
+        orders = order_book['asks'] if action == 'Buy' else order_book['bids']
+
+        for item in orders:
+            # Разбираем значения цены и объема
+            price = np.float64(item[0])
+            volume = np.float64(item[1])
+
+            # Считаем стоимость стакана в базовой валюте
+            cost_in_base_currency = price * volume
+
+            if action == 'Sell':
+                # Если у нас достаточно монет для продажи из стакана
+                if summ >= volume:
+                    summ -= volume
+                    total += cost_in_base_currency
+                # Если у нас не хватает монет, считаем частичную стоимость и завершаем функцию
+                elif summ < volume:
+                    total += summ * price
+                    return total
+
+            elif action == 'Buy':
+                # Если у нас достаточно средств для покупки из стакана
+                if summ >= cost_in_base_currency:
+                    total += volume
+                    summ -= cost_in_base_currency
+                # Если у нас не хватает средств, считаем частичное количество монет и завершаем функцию
+                elif summ < cost_in_base_currency:
+                    total += summ / price
+                    return total
+
+        # Проверка на случай, если у нас остались неиспользованные средства или монеты
+        if summ != 0.0:
+            return 0
+
+        return total
+
+    def different_price_of_order_book(self, ex_1, ex_2, balance):
+        '''
+        Функция вычисляет разницу по стаканам, а так же сам профит
+        :param ex_1: стаканы 1 биржи
+        :param ex_2: стаканы 2 биржи
+        :return: Разница
+        '''
+
+        buy_order = self.culculate_summ_of_order_book(ex_1, balance, 'Buy')
+        if buy_order == 0:
+            return None, None
+        sell_order = self.culculate_summ_of_order_book(ex_2, buy_order, 'Sell')
+        if sell_order == 0:
+            return None, None
+
+        # Разница в процентах, от изначальной
+        procent = ((sell_order - balance) / balance) * 100
+
+
+        # Возвращаем сумму конечной, и проценты
+        return sell_order, procent
 
 if __name__ == "__main__":
 
