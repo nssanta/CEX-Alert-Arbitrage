@@ -225,7 +225,7 @@ class GateApi(BaseApi):
 
         return {'KEY': self.api_key, 'Timestamp': timestamp, 'SIGN': signature}
 
-    async def get_order_book(self, pairs):
+    async def get_order_book(self, pairs, limit = 20):
         '''
         Функция для получения книги ордеров для монетной пары (стандартно для 10 стаканов)
         :param self:
@@ -233,7 +233,7 @@ class GateApi(BaseApi):
         :return:
         '''
 
-        endpoint = f'/api/v4/spot/order_book?currency_pair={pairs}'
+        endpoint = f'/api/v4/spot/order_book?currency_pair={pairs}&limit={limit}'
         url = self.domain + endpoint
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         try:
@@ -253,9 +253,10 @@ if __name__ == "__main__":
         full = await ga.get_order_book('SOIL_USDT')
         print(full)
         print(len(full))
+        net = await ga.get_contract_address('USDT')
+        print(net)
 
-        monets = temp_test.calculate_sum_of_order_book(full, 1900, 'Sell')
-        print(f'MONET = {monets}')
+
 
 
 

@@ -156,7 +156,7 @@ class BybitApi(BaseApi):
             else:
                 # Обработка других статусов ответа (не 200)
                 return None
-    async def _create_headers(self, endpoint) -> dict:
+    async def _create_headers2(self, endpoint) -> dict:
         """
             Создание заголовков запроса для авторизации.
             :param endpoint: Конечная точка для запроса.
@@ -186,6 +186,61 @@ class BybitApi(BaseApi):
         headers = {"Content-Type": "application/json"}
         return headers, url, full_param_str
 
+    async def _create_headers(self, endpoint) -> dict:
+        params = {
+            "api_key": self.api_key,
+            "timestamp": round(time.time() * 1000),
+            "recv_window": 5000
+        }
+
+        # Соблюдение порядка параметров
+        param_str = urlencode(sorted(params.items(), key=lambda tup: tup[0]))
+
+        # Использование корректного кодирования
+        param_str = quote(param_str, safe="=&")
+
+        # Формирование строки для подписи
+        sign_str = f"{endpoint.split('/')[-1]}{param_str}"
+
+        # Создание подписи запроса
+        hash = hmac.new(bytes(self.secret_key, "utf-8"), sign_str.encode("utf-8"), hashlib.sha256)
+        signature = hash.hexdigest()
+
+        # Формирование заголовков запроса
+        headers = {
+            "Content-Type": "application/json",
+            "sign": signature,
+            "X-BAPI-API-KEY": self.api_key,
+            "timestamp": str(params["timestamp"]),
+            "recv-window": str(params["recv_window"])
+        }
+
+        return headers, self.domain + endpoint
+    async def demo(self, ccy):
+        """
+        Асинхронная функция для получения информации о валюте с API.
+        :param ccy: Валюта, для которой нужно получить информацию.
+        :return: Словарь с доступными сетями вывода и минимальными и максимальными комиссиями или None в случае ошибки.
+        """
+        # Эндпоинт для запроса информации о валюте
+        endpoint = f"/asset/v3/private/deposit/record/query?coin=USDT"
+        # Создание заголовков запроса
+        headers, url, full_param_str = await self._create_headers2(endpoint)
+        # Использование асинхронного клиента для отправки запроса
+        async with httpx.AsyncClient() as client:
+            # Выполнение GET-запроса к API
+            response = await client.get(f"{url}?{full_param_str}", headers=headers)
+            if response.status_code == 200:
+                # Если ответ успешный (статус 200), обработка данных
+                data = response.json()
+
+                return data
+            else:
+                # Обработка других статусов ответа (не 200)
+                return None
+
+
+
 if __name__ == '__main__':
     start_time = time.time()
     async def main():
@@ -194,6 +249,8 @@ if __name__ == '__main__':
         print(per)
         print()
         print(len(per))
+        ppp = await bybit.demo('USDT')
+        print(ppp)
 
     import asyncio
     asyncio.run(main())

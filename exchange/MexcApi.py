@@ -237,7 +237,7 @@ class MexcApi(BaseApi):
             self.logger.error(f"Возникла ошибка: {e} __create_headers")
             return [], ""
 
-    async def get_order_book(self, pairs, limit=10):
+    async def get_order_book(self, pairs, limit=20):
         '''
         Функция для получения книги ордеров для монетной пары (стандартно для 10 стаканов)
         :param self:
@@ -270,9 +270,6 @@ if __name__ == '__main__':
         print(per)
         print()
         print(len(per))
-
-        monets = temp_test.calculate_sum_of_order_book(per, 1000, 'Buy')
-        print(f'MONET = {monets}')
 
     import asyncio
 

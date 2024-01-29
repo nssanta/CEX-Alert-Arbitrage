@@ -245,7 +245,7 @@ class OkxApi(BaseApi):
         # Возврат сформированных заголовков
         return headers
 
-    async def get_order_book(self, pair, book_depth=10):
+    async def get_order_book(self, pair, book_depth=20):
         '''
         Функция для запроса стаканов
         :param instrument_id:
