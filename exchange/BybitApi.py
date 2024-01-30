@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import inspect
 import time
-from urllib.parse import urlencode, quote_plus
+from urllib.parse import quote, urlencode, quote_plus
 
 from exchange.BaseApi import BaseApi
 from pybit.unified_trading import HTTP
@@ -134,7 +134,7 @@ class BybitApi(BaseApi):
         # Эндпоинт для запроса информации о валюте
         endpoint = f"/asset/v3/private/coin-info/query"
         # Создание заголовков запроса
-        headers, url, full_param_str = await self._create_headers(endpoint)
+        headers, url, full_param_str = await self._create_headers2(endpoint)
         # Использование асинхронного клиента для отправки запроса
         async with httpx.AsyncClient() as client:
             # Выполнение GET-запроса к API
@@ -216,28 +216,27 @@ class BybitApi(BaseApi):
         }
 
         return headers, self.domain + endpoint
-    async def demo(self, ccy):
-        """
-        Асинхронная функция для получения информации о валюте с API.
-        :param ccy: Валюта, для которой нужно получить информацию.
-        :return: Словарь с доступными сетями вывода и минимальными и максимальными комиссиями или None в случае ошибки.
-        """
-        # Эндпоинт для запроса информации о валюте
-        endpoint = f"/asset/v3/private/deposit/record/query?coin=USDT"
-        # Создание заголовков запроса
-        headers, url, full_param_str = await self._create_headers2(endpoint)
-        # Использование асинхронного клиента для отправки запроса
-        async with httpx.AsyncClient() as client:
-            # Выполнение GET-запроса к API
-            response = await client.get(f"{url}?{full_param_str}", headers=headers)
-            if response.status_code == 200:
-                # Если ответ успешный (статус 200), обработка данных
-                data = response.json()
 
-                return data
-            else:
-                # Обработка других статусов ответа (не 200)
-                return None
+    async def get_order_book(self, symbol, limit=20):
+        '''
+        Функция для получения книги ордеров для монетной пары
+        :param symbol: монетная пара
+        :param limit: лимит для размера данных
+        :return: данные книги ордеров
+        '''
+
+        endpoint = '/spot/v3/public/quote/depth'
+        url = self.domain + endpoint
+        headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        params = {'symbol': symbol, 'limit': limit}
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, headers=headers, params=params)
+                data = response.json()
+                return data['result']
+        except Exception as e:
+            self.logger.error(f"Возникла ошибка: {e} в функции get_order_book")
 
 
 
@@ -249,8 +248,12 @@ if __name__ == '__main__':
         print(per)
         print()
         print(len(per))
-        ppp = await bybit.demo('USDT')
-        print(ppp)
+
+        ceti = await bybit.get_network_commission('USDT')
+        print(ceti)
+
+        ppp = await bybit.get_order_book('BTCUSDT')
+        print(ppp['bids'])
 
     import asyncio
     asyncio.run(main())

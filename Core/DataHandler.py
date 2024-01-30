@@ -118,6 +118,9 @@ class DataHandler:
                 elif api1.name == 'Gate_io':
                     coin_gate = data1[pair]['coin']
                     tasks.append(api1.get_order_book(coin_gate))
+                elif api1.name == 'Bybit':
+                    coin_bybit = data1[pair]['coin']
+                    tasks.append(api1.get_order_book(coin_bybit))
 
                 if api2.name == 'Mexc':
                     coin_mex = data2[pair]['coin'].replace("_", "")
@@ -128,6 +131,9 @@ class DataHandler:
                 elif api2.name == 'Gate_io':
                     coin_gate = data2[pair]['coin']
                     tasks.append(api2.get_order_book(coin_gate))
+                elif api2.name == 'Bybit':
+                    coin_bybit = data2[pair]['coin']
+                    tasks.append(api2.get_order_book(coin_bybit))
 
                 # Запускаем функции параллельно
                 book_api_1, book_api_2 = await asyncio.gather(*tasks)
@@ -146,7 +152,7 @@ class DataHandler:
                             api1.name: data1[pair],
                             api2.name: data2[pair]
                         },
-                        'dif': f'{abs(round(price_diff_percentage, 4))} \n Процент стаканов: {round(procent)} \n Сумм без комм: {summ}'
+                        'dif': f'{abs(round(price_diff_percentage, 4))} \n Процент стаканов: {round(procent,7)} \n Сумм без комм: {summ}'
                     }
                 else:
 

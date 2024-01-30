@@ -276,10 +276,12 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
-        # per = await okx.get_full_info()
-        # print(per)
-        order = await okx.get_order_book('BTC-USDC')
-        print(order)
+        #per = await okx.get_full_info()
+        #print(per)
+        # order = await okx.get_order_book('BTC-USDC')
+        # print(order)
+        lol = await okx.get_network_commission('TAMA')
+        print(lol)
 
        # print(len(per))
 
