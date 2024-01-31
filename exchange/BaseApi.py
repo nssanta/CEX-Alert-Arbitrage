@@ -64,3 +64,12 @@ class BaseApi(ABC):
         :return:
         """
 
+    @abstractmethod
+    async def get_order_book(self, ccy, limit=20):
+        '''
+            Мотод для получения книги ордеров
+            :param ccy: Монетная пара
+            :param limit: Глубина погружения.
+            :return:
+        '''
+
