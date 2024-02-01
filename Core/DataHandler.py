@@ -7,6 +7,7 @@ import numpy as np
 import TelBot.CallHandler
 from Data.ListCoins import ListCoins
 from exchange.GateApi import GateApi
+from exchange.KucoinApi import KucoinApi
 from exchange.MexcApi import MexcApi
 from exchange.BybitApi import BybitApi
 from exchange.CoinWApi import CoinWApi
@@ -121,6 +122,9 @@ class DataHandler:
                 elif api1.name == 'Bybit':
                     coin_bybit = data1[pair]['coin']
                     tasks.append(api1.get_order_book(coin_bybit))
+                elif api1.name == 'Kucoin':
+                    coin_kucoin = data1[pair]['coin']
+                    tasks.append(api1.get_order_book(coin_kucoin))
 
                 if api2.name == 'Mexc':
                     coin_mex = data2[pair]['coin'].replace("_", "")
@@ -134,6 +138,9 @@ class DataHandler:
                 elif api2.name == 'Bybit':
                     coin_bybit = data2[pair]['coin']
                     tasks.append(api2.get_order_book(coin_bybit))
+                elif api2.name == 'Kucoin':
+                    coin_kucoin = data2[pair]['coin']
+                    tasks.append(api2.get_order_book(coin_kucoin))
 
                 # Запускаем функции параллельно
                 book_api_1, book_api_2 = await asyncio.gather(*tasks)
@@ -324,6 +331,7 @@ class DataHandler:
             okx_pair = f"{onecoin}-{twocoin}".upper()
             mexc_pair = f"{onecoin}_{twocoin}".lower()
             gateio_pair = f"{onecoin}_{twocoin}".lower()
+            kucoin_pair = f"{onecoin}-{twocoin}".upper()
             # Список задач.
             tasks = []
             # Проходим по списку бирж и проверяем на основе имени.
@@ -342,6 +350,9 @@ class DataHandler:
                     tasks.append(task)
                 elif "Gate_io" in exchang.name:
                     task = asyncio.create_task(exchang.get_one_coin(gateio_pair))
+                    tasks.append(task)
+                elif "Kucoin" in exchang.name:
+                    task = asyncio.create_task(exchang.get_one_coin(kucoin_pair))
                     tasks.append(task)
             # Запускаем все запросы одновременно
             results = await asyncio.gather(*tasks)
@@ -462,6 +473,7 @@ if __name__ == "__main__":
         coinw = CoinWApi("Coin W")
         mexc = MexcApi("Mexc")
         gate = GateApi("Gate_io")
+        kucoin = KucoinApi('Kucoin')
 
         ex_list = []
         #ex_list.append(okx)
@@ -476,6 +488,7 @@ if __name__ == "__main__":
         #await gate._load_network_commission()
         ex_list.append(mexc)
         ex_list.append(gate)
+        ex_list.append(kucoin)
         print(f"********** Тест на _ биржах spred spisok = {ex_list} = {DH.min_spred} - {DH.max_spred}")
         test3 = await DH.get_best_ticker(ex_list)
         #test3 = await DH.get_coin_all_exchange(ex_list=ex_list, coin_pair="SSWPUSDT")

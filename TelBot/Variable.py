@@ -9,8 +9,10 @@ from Core.DataHandler import DataHandler
 from exchange.BybitApi import BybitApi
 from exchange.CoinWApi import CoinWApi
 from exchange.GateApi import GateApi
+from exchange.KucoinApi import KucoinApi
 from exchange.MexcApi import MexcApi
 from exchange.OkxApi import OkxApi
+
 
 #   ЛОГИРОВАНИЕ В ФАЙЛ И КОНСОЛЬ!
 log_file = "variable.log"
@@ -91,13 +93,18 @@ async def initialize_variables(update: Update, context: ContextTypes.DEFAULT_TYP
         # context.chat_data.setdefault('Coin W', CoinWApi("Coin W"))
         context.chat_data.setdefault('Mexc', MexcApi("Mexc"))
         context.chat_data.setdefault('Gate_io', GateApi("Gate_io"))
+        context.chat_data.setdefault('Kucoin', KucoinApi("Kucoin"))
+        
 
         context.chat_data.setdefault('EXCHANGE_LIST', [
-            context.chat_data.get('Okx'),
             context.chat_data.get('Bybit'),
+            context.chat_data.get('Gate_io'),
+            context.chat_data.get('Kucoin'),
             # context.chat_data.get('Coin W'),
             context.chat_data.get('Mexc'),
-            context.chat_data.get('Gate_io'),
+            context.chat_data.get('Okx'),
+
+
 
         ])
     except Exception as e:

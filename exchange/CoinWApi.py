@@ -180,6 +180,14 @@ class CoinWApi(BaseApi):
             'sign': signature,
         }
         return headers
+    async def get_order_book(self, ccy, limit=20):
+        '''
+
+        :param ccy:
+        :param limit:
+        :return:
+        '''
+        pass
 
 if __name__ == '__main__':
     start_time = time.time()

@@ -244,16 +244,17 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         bybit = BybitApi("Bybit")
-        per = await bybit.get_full_info()
+        per = await bybit.get_one_coin('BTCUSDT')
+        # per = await bybit.get_full_info()
         print(per)
-        print()
-        print(len(per))
-
-        ceti = await bybit.get_network_commission('USDT')
-        print(ceti)
-
-        ppp = await bybit.get_order_book('BTCUSDT')
-        print(ppp['bids'])
+        # print()
+        # print(len(per))
+        #
+        # ceti = await bybit.get_network_commission('USDT')
+        # print(ceti)
+        #
+        # ppp = await bybit.get_order_book('BTCUSDT')
+        # print(ppp['bids'])
 
     import asyncio
     asyncio.run(main())

@@ -130,7 +130,9 @@ class GateApi(BaseApi):
             commission_data = {}
             for currency_data in self.data_network:
                 if currency_data['currency'] == ccy:
-                    withdraw_fix_on_chains = currency_data['withdraw_fix_on_chains']
+                    #withdraw_fix_on_chains = currency_data['withdraw_fix_on_chains']
+                    withdraw_fix_on_chains = currency_data.get('withdraw_fix_on_chains', currency_data)
+
                     for network, fee_data in withdraw_fix_on_chains.items():
                         # Создаем переменные для зоны видимости
                         name_network = ''
@@ -249,11 +251,9 @@ class GateApi(BaseApi):
 if __name__ == "__main__":
     async def main():
         ga = GateApi("Gate.io")
-        #await ga._load_network_commission()
-        full = await ga.get_order_book('SOIL_USDT')
-        print(full)
-        print(len(full))
-        net = await ga.get_contract_address('USDT')
+        await ga._load_network_commission()
+
+        net = await ga.get_network_commission('AI')
         print(net)
 
 
