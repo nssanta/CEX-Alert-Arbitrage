@@ -169,6 +169,7 @@ class OkxApi(BaseApi):
                         for item in data["data"]:
                             if item["ccy"] == ccy:
                                 enabled = 'Да' if str(item.get('canWd', False)).capitalize() == 'True' else 'Нет'
+                                in_enabled = 'Да' if str(item.get('canDep', False)).capitalize() == 'True' else 'Нет'
                                 # Цикл по данным контракта для получения тех которые соответствуют сети.
                                 for contr in contract_data:
                                     if contr['chain'] == item["chain"]:
@@ -177,6 +178,7 @@ class OkxApi(BaseApi):
                                         contract = None
                                 currency_info[item["chain"]] = {
                                     'enabled': enabled,
+                                    'in_enabled': in_enabled,
                                     "minFee": item["minFee"],
                                     "maxFee": item["maxFee"],
                                     'outMin': item["minWd"],
@@ -276,6 +278,7 @@ if __name__ == '__main__':
     start_time = time.time()
     async def main():
         okx = OkxApi("Okx")
+
         #per = await okx.get_full_info()
         #print(per)
         # order = await okx.get_order_book('BTC-USDC')

@@ -179,9 +179,11 @@ class MexcApi(BaseApi):
                         oneaddr = 'Да' if str(network.get('sameAddress', False)).capitalize() == 'True' else 'Нет'
                         # Работает ли сеть для вывода
                         enabled = 'Да' if str(network.get('withdrawEnable', False)).capitalize() == 'True' else 'Нет'
+                        in_enabled = 'Да' if str(network.get('depositEnable', False)).capitalize() == 'True' else 'Нет'
 
                         commission_data[network_name] = {
                             'enabled': enabled,
+                            'in_enabled': in_enabled,
                             'minFee': commission,
                             'maxFee': commission,
                             'outMin': min_fee,

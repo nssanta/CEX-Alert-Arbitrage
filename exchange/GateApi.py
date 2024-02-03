@@ -146,10 +146,12 @@ class GateApi(BaseApi):
                                 # Работает ли сеть для вывода
                                 name_network = contr['name_en']
                                 enabled = 'Да' if contr['is_withdraw_disabled'] == 0 else 'Нет'
+                                in_enabled = 'Да' if contr['is_deposit_disabled'] == 0 else 'Нет'
                                 contract = contr['contract_address']    # Адресс контракта , если он имеется.
                         #commission_data[network] = {
                         commission_data[name_network] = {
                             'enabled': enabled,
+                            'in_enabled': in_enabled,
                             'minFee': fee_data,
                             'maxFee': fee_data,
                             'outMin': min_fee,
@@ -203,6 +205,7 @@ class GateApi(BaseApi):
                 response = await client.get(url, headers=sign_headers)
                 # Сохраняем данные в переменую класса.
                 self.data_network = response.json()
+
         except Exception as e:
             self.logger.error(f"Возникла ошибка: {e} _load_network_commission")
             await asyncio.sleep(2)
@@ -252,6 +255,7 @@ if __name__ == "__main__":
     async def main():
         ga = GateApi("Gate.io")
         await ga._load_network_commission()
+        print(ga.data_network)
 
         net = await ga.get_network_commission('AI')
         print(net)

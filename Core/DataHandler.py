@@ -476,7 +476,7 @@ if __name__ == "__main__":
         kucoin = KucoinApi('Kucoin')
 
         ex_list = []
-        #ex_list.append(okx)
+        ex_list.append(okx)
         DH = DataHandler("DH")
         await DH.ListCoins.initialize_data()
         # print("********** Тест на 2 биржах")
@@ -486,8 +486,9 @@ if __name__ == "__main__":
         # print("********** Тест на 3 биржах")
         # test2 = await DH.get_best_ticker(ex_list)
         #await gate._load_network_commission()
-        ex_list.append(mexc)
-        ex_list.append(gate)
+        #ex_list.append(bybit)
+        #ex_list.append(mexc)
+        #ex_list.append(gate)
         ex_list.append(kucoin)
         print(f"********** Тест на _ биржах spred spisok = {ex_list} = {DH.min_spred} - {DH.max_spred}")
         test3 = await DH.get_best_ticker(ex_list)

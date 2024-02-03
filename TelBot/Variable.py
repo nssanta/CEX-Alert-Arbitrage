@@ -47,8 +47,8 @@ WhiteList = [
     '1271372091',
 ]
 # Пароль
-#PASSWORD = "A"
-PASSWORD = os.getenv('bot_pass')
+PASSWORD = "A"
+#PASSWORD = os.getenv('bot_pass')
 
 # Состояния диалога
 PASS_STATE = 0                      # Авторизация

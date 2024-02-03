@@ -144,9 +144,11 @@ async def format_data_ticker(data):
                                 # Добавляем новые поля в сообщение о сети с новой строки
                                 # Часть кода, где нужно добавить круглешок в начале строки
                                 status = network_data.get('enabled', '-')
+                                in_status = network_data.get('in_enabled', '-')
                                 status_emoji = '🟢' if status == 'Да' else '🔴' if status == 'Нет' else ''
+                                in_status_emoji = '🟩' if status == 'Да' else '🟥' if status == 'Нет' else ''
                                 message_parts.append(
-                                    f"   {status_emoji} {network}\n"
+                                    f"   {status_emoji}{in_status_emoji} {network}\n"
                                     #f"   {status_emoji} {network} - \n   Работает: {status}\n"
                                 # message_parts.append(
                                 #     f"   {network} - \n   Работает: {network_data.get('enabled', 'Данные отсутствуют')}\n"
