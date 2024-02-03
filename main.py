@@ -78,7 +78,7 @@ def main() -> None:
 
     # Фильтр для обработки сообщений в настроке бирж
     #exchange_names = "|".join(exchange.name for exchange in EXCHANGE_LIST)
-    exchange_names= "Okx|Bybit|Coin W|Mexc|Gate.io" #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ОБЯЗАТЕЛЬНО ДОБАВЬ!!!!!!!!!
+    exchange_names= "Okx|Bybit|Coin W|Mexc|Gate.io|Kucoin" #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ОБЯЗАТЕЛЬНО ДОБАВЬ!!!!!!!!!
     exchange_filter = filters.Regex(f"^(✅|❌) ({exchange_names})$|^<- назад$")
 
     # Создаем обработчик состояний диалога
