@@ -20,8 +20,8 @@ class BybitApi(BaseApi):
         # Переменная для ссылки на api (сайт)
         self.domain = "https://api.bybit.com"
         # Данные для Авторизации
-        self.api_key = 'kg9Xn70zxuWpyadcbf'
-        self.secret_key = 'rCZqBxSk5pSxEPtw1VPDsndCxbnuJKlMhWFs'
+        self.api_key = 'os.getenv('BYBIT_API_KEY')'
+        self.secret_key = 'os.getenv('BYBIT_SECRET_KEY')'
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.

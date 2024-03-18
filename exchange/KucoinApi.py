@@ -299,7 +299,8 @@ if __name__ == '__main__':
     async def main():
         kucoin = KucoinApi("Kucoin")
         await kucoin.get_full_info()
-        per = await kucoin.get_order_book('BTC-USDT')
+        await kucoin._load_network_commission()
+        per = await kucoin.get_network_commission('GMEE')
         print(per)
         print(len(per))
 

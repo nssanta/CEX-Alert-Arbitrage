@@ -23,8 +23,8 @@ class MexcApi(BaseApi):
         # self.domain = "https://api.mexc.com"
         self.domain = "https://www.mexc.com"
         # Данные для Авторизации
-        self.api_key = 'mx0vglwHDo6E88yURw'
-        self.secret_key = '41c1149ceec443b981d195452712812a'
+        self.api_key = 'os.getenv('MEXC_API_KEY')'
+        self.secret_key = 'os.getenv('MEXC_SECRET_KEY')'
         self.passphrase = '@SuperSanta1995'
 
     async def get_full_info(self):
@@ -163,6 +163,7 @@ class MexcApi(BaseApi):
             for coin_data in self.data_network:
                 # Если это наша монета
                 if coin_data["coin"] == ccy:
+                    print(coin_data)
                     coin_info = coin_data
                     # Формируем словарь с названием сети и коммисией
                     for network in coin_info['networkList']:
@@ -269,7 +270,7 @@ if __name__ == '__main__':
         mexc = MexcApi("Mexc")
         #await mexc._load_network_commission()
         await mexc.get_full_info()
-        per = await mexc.get_network_commission('BTC')
+        per = await mexc.get_network_commission('ETERNAL')
         print(per)
         print()
         print(len(per))
