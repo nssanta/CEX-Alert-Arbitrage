@@ -18,8 +18,8 @@ class CoinWApi(BaseApi):
         # Переменная для ссылки на api (сайт)
         self.domain = "https://api.coinw.com"
         # Данные для Авторизации
-        self.api_key = "os.getenv('COINW_API_KEY')"
-        self.secret_key = "os.getenv('COINW_SECRET_KEY')"
+        self.api_key = os.getenv('COINW_API_KEY')
+        self.secret_key = os.getenv('COINW_SECRET_KEY')
     async def get_full_info(self):
         """
             Асинхронная функция для получения информации с API.

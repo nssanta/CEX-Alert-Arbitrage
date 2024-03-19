@@ -10,8 +10,7 @@ from telegram.ext import filters, Application, CommandHandler, ContextTypes, Mes
 from TelBot import UiHandler, CallHandler, Variable, UiBot
 
 
-#TOKEN = os.getenv('bot_token')
-TOKEN = "os.getenv('TELEGRAM_BOT_TOKEN')"
+TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 #______________________________________________________________________________________________________________________
 
 # # Вывод логирования в терминал

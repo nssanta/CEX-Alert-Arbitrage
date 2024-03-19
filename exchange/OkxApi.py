@@ -23,8 +23,8 @@ class OkxApi(BaseApi):
         # Переменная для ссылки на api (сайт)
         self.domain = "https://www.okx.com"
         # Данные для Авторизации
-        self.api_key = 'os.getenv('OKX_API_KEY')'
-        self.secret_key = 'os.getenv('OKX_SECRET_KEY')'
+        self.api_key = os.getenv('OKX_API_KEY')
+        self.secret_key = os.getenv('OKX_SECRET_KEY')
         self.passphrase = '@Seva1995'
 
     async def get_one_coin(self, coin_pair):

@@ -23,8 +23,8 @@ class MexcApi(BaseApi):
         # self.domain = "https://api.mexc.com"
         self.domain = "https://www.mexc.com"
         # Данные для Авторизации
-        self.api_key = 'os.getenv('MEXC_API_KEY')'
-        self.secret_key = 'os.getenv('MEXC_SECRET_KEY')'
+        self.api_key = os.getenv('MEXC_API_KEY')
+        self.secret_key = os.getenv('MEXC_SECRET_KEY')
         self.passphrase = '@SuperSanta1995'
 
     async def get_full_info(self):

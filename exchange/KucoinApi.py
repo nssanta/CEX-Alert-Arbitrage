@@ -26,8 +26,8 @@ class KucoinApi(BaseApi):
         # Переменная для ссылки на api (сайт)
         self.domain = "https://api.kucoin.com"
         # Данные для Авторизации
-        self.api_key = 'os.getenv('KUCOIN_API_KEY')'
-        self.secret_key = 'os.getenv('KUCOIN_SECRET_KEY')'
+        self.api_key = os.getenv('KUCOIN_API_KEY')
+        self.secret_key = os.getenv('KUCOIN_SECRET_KEY')
         self.pass_api = '@SuperSanta1995'
     async def get_full_info(self):
         """

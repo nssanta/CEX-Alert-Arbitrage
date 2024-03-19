@@ -21,8 +21,8 @@ class GateApi(BaseApi):
         # Переменная для ссылки на api (сайт)
         self.domain = "https://api.gateio.ws"
         # Данные для Авторизации
-        self.api_key = 'os.getenv('GATE_API_KEY')'
-        self.secret_key = 'os.getenv('GATE_SECRET_KEY')'
+        self.api_key = os.getenv('GATE_API_KEY')
+        self.secret_key = os.getenv('GATE_SECRET_KEY')
         self.passphrase = '@SuperSanta1995'
 
     async def get_full_info(self):
