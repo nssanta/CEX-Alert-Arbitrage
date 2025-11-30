@@ -81,6 +81,7 @@ The file `strategies/triangular_logic.py` contains the mathematical core for tri
 
 ---
 
+
 ## 📝 License
 
 MIT License. See [LICENSE](LICENSE) for more information.
